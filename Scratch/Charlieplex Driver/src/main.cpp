@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "Charlieplex4Pin.h"
 
 void setup() {
     pinMode(13, OUTPUT);
