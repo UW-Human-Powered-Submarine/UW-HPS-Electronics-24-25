@@ -5,6 +5,8 @@
 
 #define USE_HANDSOLDERED_BOARD_CONFIG
 
+
+
 //  loockup table for charlieplex circuit. 
 //  each entry means {high, low, disconnect, disconnect}
 //  two disconnect pins are interchangable
@@ -17,23 +19,19 @@ const int CHARLIEPLEX_CIRCUIT_PERMUTATION[12][4] = {
 
 #ifdef USE_HANDSOLDERED_BOARD_CONFIG
 //  Map from individual LED to permutation entry in CHARLIEPLEX_CIRCUIT_PERMUTATION
-const int CHARLIEPLEX_LED_GREEN[2] = {3, 0};
-const int CHARLIEPLEX_LED_YELLOW[5] = {1, 4, 8, 5, 2};
-const int CHARLIEPLEX_LED_RED[5] = {6, 7, 11, 10, 9};
+const int CHARLIEPLEX_LED_GREEN[2] = {8, 11};
+const int CHARLIEPLEX_LED_YELLOW[5] = {10, 7, 3, 6, 9};
+const int CHARLIEPLEX_LED_RED[5] = {5, 4, 0, 1, 2};
 #endif  //  USE_HANDSOLDERED_BOARD_CONFIG
 
 class Charlieplex4Pin {
 private:
-    int pin0;
-    int pin1;
-    int pin2;
-    int pin3;
-
     unsigned int refresh_period_us;
 
     unsigned int led_on_delay_us = 1000;
     unsigned long prev_timestamp_us = 0;
-
+    
+    int pin_array[4];   //  lookup table for pins
     bool led_states[12];
 
     void led_on(int pin_high, int pin_low, int pin_disconnect_1, int pin_disconnect_2) const;
@@ -60,12 +58,14 @@ public:
     //  Set led state
     //  index from permutation
     void set_led_state(int index_permutation, bool state);
+    bool get_led_state(int index_permutation) const;
 
     void set_green_led(int index, bool state);
     void set_red_led(int index, bool state);
     void set_yellow_led(int index, bool state);
+
+    //  Set all states to 0
+    void clear_states();
 };
-
-
 
 #endif  //  ___CHARLIEPLEX_H___
