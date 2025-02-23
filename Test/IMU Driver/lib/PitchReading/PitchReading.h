@@ -1,5 +1,5 @@
-#ifndef PITCHREADING_H
-#define PITCHREADING_H
+#ifndef ___PITCH_READING_H___
+#define ___PITCH_READING_H___
 
 class PitchReading {
 private:
@@ -10,4 +10,4 @@ public:
     ~PitchReading(); 
 };
 
-#endif  // PITCHREADING_H
+#endif  // ___PITCH_READING_H___

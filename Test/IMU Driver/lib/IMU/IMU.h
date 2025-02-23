@@ -1,5 +1,5 @@
-#ifndef ___IMU_PITCH_H___
-#define ___IMU_PITCH_H___
+#ifndef ___IMU_H___
+#define ___IMU_H___
 
 #include "Wire.h"
 
@@ -11,9 +11,18 @@ private:
     int16_t x_gyro, y_gyro, z_gyro;
     int16_t temperature;
 
+    unsigned int refresh_period_ms = 100;
+
 public:
     IMU();
+    IMU(unsigned int refresh_period_ms);
     ~IMU(); 
+
+    //  update the value at given interval
+    void update();
+    void refresh();
+
+    void set_refresh_period(unsigned int millisecond);
 
     //  Read x acceleration from last IMU reading
     int16_t get_x_acceleration() const;

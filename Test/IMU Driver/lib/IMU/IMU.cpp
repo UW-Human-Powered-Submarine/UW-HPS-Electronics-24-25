@@ -1,6 +1,12 @@
 #include "IMU.h"
 
-IMU::IMU() {
+IMU::IMU(): IMU(100){
+}
+
+IMU::IMU(unsigned int refresh_period_ms)
+    : x_acceleration(0), y_acceleration(0), z_acceleration(0)
+    , x_gyro(0), y_gyro(0), z_gyro(0), temperature(0), refresh_period_ms(refresh_period_ms) {
+    
     // Begin the I2C
     Wire.begin();
     // begin communication with the IMU
@@ -12,35 +18,37 @@ IMU::IMU() {
 }
 
 IMU::~IMU() {
-    // Cleanup code here
 }
 
-// Getter methods
+void IMU::set_refresh_period(unsigned int millisecond){
+    this->refresh_period_ms = millisecond;
+}
+
 int16_t IMU::get_x_acceleration() const {
-    return x_acceleration;
+    return this->x_acceleration;
 }
 
 int16_t IMU::get_y_acceleration() const {
-    return y_acceleration;
+    return this->y_acceleration;
 }
 
 int16_t IMU::get_z_acceleration() const {
-    return z_acceleration;
+    return this->z_acceleration;
 }
 
 int16_t IMU::get_x_gyro() const {
-    return x_gyro;
+    return this->x_gyro;
 }
 
 int16_t IMU::get_y_gyro() const {
-    return y_gyro;
+    return this->y_gyro;
 }
 
 int16_t IMU::get_z_gyro() const {
-    return z_gyro;
+    return this->z_gyro;
 }
 
 int16_t IMU::get_temperature() const {
-    return temperature;
+    return this->temperature;
 }
 
