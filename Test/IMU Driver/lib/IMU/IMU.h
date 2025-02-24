@@ -13,7 +13,7 @@ private:
     int16_t x_gyro, y_gyro, z_gyro;
     int16_t temperature;
 
-    unsigned long refresh_period_us = 100000;   //  default to 100ms, or 100,000us
+    unsigned long refresh_period_us = 100000;   //  default to 100ms, or 100000us
     unsigned long prev_timestamp_us = 0;
 
 public:
