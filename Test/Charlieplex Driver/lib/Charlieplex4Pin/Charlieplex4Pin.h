@@ -26,9 +26,9 @@ const int CHARLIEPLEX_LED_RED[5] = {5, 4, 0, 1, 2};
 
 class Charlieplex4Pin {
 private:
-    unsigned int refresh_period_us;
+    unsigned long refresh_period_us;
 
-    unsigned int led_on_delay_us = 1000;
+    unsigned long led_on_delay_us = 1000;
     unsigned long prev_timestamp_us = 0;
     
     int pin_array[4];   //  lookup table for pins
@@ -52,8 +52,8 @@ public:
     //  Loop() should call Charlieplex.update() instead of this function
     void refresh() const;
 
-    void set_led_on_delay(int microsecond);
-    void set_refresh_period(int microsecond);
+    void set_led_on_delay(unsigned long microsecond);
+    void set_refresh_period(unsigned long microsecond);
 
     //  Set led state
     //  index from permutation
