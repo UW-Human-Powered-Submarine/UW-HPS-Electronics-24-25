@@ -5,8 +5,6 @@
 
 #define USE_HANDSOLDERED_BOARD_CONFIG
 
-
-
 //  loockup table for charlieplex circuit. 
 //  each entry means {high, low, disconnect, disconnect}
 //  two disconnect pins are interchangable

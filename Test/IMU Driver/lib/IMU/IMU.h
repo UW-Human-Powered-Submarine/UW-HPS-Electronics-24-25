@@ -4,10 +4,11 @@
 #include "Arduino.h"
 #include "Wire.h"
 
-#define MPU_ADDR_DEFAULT 0x68
+#define IMU_ADDR_DEFAULT 0x68
 
 class IMU {
 private:
+    uint8_t imu_address;
     int16_t x_acceleration, y_acceleration, z_acceleration;  
     int16_t x_gyro, y_gyro, z_gyro;
     int16_t temperature;
@@ -17,11 +18,13 @@ private:
 
 public:
     IMU();
-    IMU(unsigned int refresh_period_ms);
+    IMU(uint8_t imu_address, unsigned long refresh_period_ms);
     ~IMU(); 
 
-    //  update the value at given interval
+    //  update the value at given interval, could be called at highest frequency. 
     void update();
+
+    //  forced refresh, update the sensor reading. 
     void refresh();
 
     void set_refresh_period(unsigned long microsecond);
