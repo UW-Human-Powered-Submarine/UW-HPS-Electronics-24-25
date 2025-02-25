@@ -3,8 +3,8 @@
 
 #include "Arduino.h"
 
-// #define IMU_LIB_TEST
-#define IMU_PITCH_LIB_TEST
+#define IMU_LIB_TEST
+// #define IMU_PITCH_LIB_TEST
 // #define BLINKING_TEST
 
 

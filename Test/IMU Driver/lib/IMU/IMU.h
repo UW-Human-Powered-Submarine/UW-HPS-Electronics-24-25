@@ -20,20 +20,11 @@
 
 #include "Arduino.h"
 #include "Wire.h"
+#include "Scheduler.h"
 
 #define IMU_ADDR_DEFAULT 0x68
 
-class IMU {
-private:
-    bool initialized = false;
-    uint8_t imu_address;
-    int16_t x_acceleration, y_acceleration, z_acceleration;  
-    int16_t x_gyro, y_gyro, z_gyro;
-    int16_t temperature;
-
-    unsigned long refresh_period_us = 100000;   //  default to 100ms, or 100000us
-    unsigned long prev_timestamp_us = 0;
-
+class IMU: public Scheduler {
 public:
     IMU();
     IMU(uint8_t imu_address, unsigned long refresh_period_ms);
@@ -41,15 +32,6 @@ public:
 
     //  initialize IMU, start the communication
     void begin();
-
-    //  update the value at given interval, could be called at highest frequency. 
-    void update();
-
-    //  forced refresh, update the sensor reading. 
-    void refresh();
-
-    void set_refresh_period(unsigned long microsecond);
-    void set_refresh_period_ms(unsigned long millisecond);
 
     //  Read x acceleration from last IMU reading
     int16_t get_x_acceleration() const;
@@ -71,6 +53,15 @@ public:
 
     //  Read temperature from last IMU reading
     int16_t get_temperature() const;
+
+private:
+    bool initialized = false;
+    uint8_t imu_address;
+    int16_t x_acceleration, y_acceleration, z_acceleration;  
+    int16_t x_gyro, y_gyro, z_gyro;
+    int16_t temperature;
+
+    void event() override;
 };
 
 #endif  //  ___IMU_PITCH_H___
