@@ -13,6 +13,9 @@
 //  |                                                                         |
 //  |   Author     :    Zihui(Andy) Liu <liuzihui@uw.edu>                     |
 //  |   Last Update:    February 24, 2025                                     |
+//  |                                                                         |
+//  |   Special Thanks to Leo Lin for implementing the low-level              |
+//  |       communication with MPU-6050                                       |
 //  +-------------------------------------------------------------------------+
 
 #include "Arduino.h"

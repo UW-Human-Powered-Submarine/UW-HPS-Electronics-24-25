@@ -1,6 +1,23 @@
 #ifndef ___CHARLIEPLEX_4PIN_H___
 #define ___CHARLIEPLEX_4PIN_H___
 
+//  +-------------------------------------------------------------------------+
+//  |   Charlieplex4Pin handles the multiplex function for the heads-up       |
+//  |       display. Charlieplex4Pin.update() should be called at highest     |
+//  |       frequency (<2ms), and the internal timer regulates the detailed   |
+//  |       refresh schedule.                                                 |
+//  |                                                                         |
+//  |   Call Charlieplex4Pin.update() at highest frequency possible.          |
+//  |       less than about 2 milliseconds,                                   |
+//  |       otherwise the display will be too dim                             |
+//  |                                                                         |
+//  |   Uncomment "#define USE_HANDSOLDERED_BOARD_CONFIG" for handsoldered    |
+//  |       board
+//  |                                                                         |
+//  |   Author     :    Zihui(Andy) Liu <liuzihui@uw.edu>                     |
+//  |   Last Update:    February 24, 2025                                     |
+//  +-------------------------------------------------------------------------+
+
 #include "Arduino.h"
 
 #define USE_HANDSOLDERED_BOARD_CONFIG
