@@ -1,6 +1,20 @@
 #ifndef ___IMU_H___
 #define ___IMU_H___
 
+//  +-------------------------------------------------------------------------+
+//  |   This IMU class handles all the basic communication with MPU-6050 via  |
+//  |       I2C protocal, and refresh automatically at set interval           |
+//  |                                                                         |
+//  |   IMU must be initialized before use by IMU.begin()                     |
+//  |   IMU values are buffered in the internal field, calling IMU.refresh()  |
+//  |       to pull data from IMU and update the field                        |
+//  |   Calling IMU.update() at high frequency will automatically update      |
+//  |       internal field at set interval.                                   |
+//  |                                                                         |
+//  |   Author     :    Zihui(Andy) Liu <liuzihui@uw.edu>                     |
+//  |   Last Update:    February 24, 2025                                     |
+//  +-------------------------------------------------------------------------+
+
 #include "Arduino.h"
 #include "Wire.h"
 
@@ -8,6 +22,7 @@
 
 class IMU {
 private:
+    bool initialized = false;
     uint8_t imu_address;
     int16_t x_acceleration, y_acceleration, z_acceleration;  
     int16_t x_gyro, y_gyro, z_gyro;
@@ -20,6 +35,9 @@ public:
     IMU();
     IMU(uint8_t imu_address, unsigned long refresh_period_ms);
     ~IMU(); 
+
+    //  initialize IMU, start the communication
+    void begin();
 
     //  update the value at given interval, could be called at highest frequency. 
     void update();

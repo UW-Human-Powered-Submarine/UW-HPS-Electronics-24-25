@@ -4,10 +4,16 @@ IMU::IMU(): IMU(IMU_ADDR_DEFAULT, 100000) {
 }
 
 IMU::IMU(uint8_t imu_address, unsigned long refresh_period_us)
-    : imu_address(imu_address), x_acceleration(0), y_acceleration(0), z_acceleration(0)
+    : initialized(false), imu_address(imu_address)
+    , x_acceleration(0), y_acceleration(0), z_acceleration(0)
     , x_gyro(0), y_gyro(0), z_gyro(0), temperature(0)
     , refresh_period_us(refresh_period_us), prev_timestamp_us(0) {
-    
+}
+
+IMU::~IMU() {
+}
+
+void IMU::begin() {
     // Begin the I2C
     Wire.begin();
     // begin communication with the IMU
@@ -16,9 +22,8 @@ IMU::IMU(uint8_t imu_address, unsigned long refresh_period_us)
     Wire.write(0); // wakes up the 6050
     // can begin or stop transmission from the arduino to IMU
     Wire.endTransmission(true);
-}
 
-IMU::~IMU() {
+    this->initialized = true;
 }
 
 void IMU::update() {
@@ -39,6 +44,11 @@ void IMU::update() {
 }
 
 void IMU::refresh() {
+    if (!initialized) {
+        Serial.println("IMU haven't initialized yet. Run IMU.begin() first. ");
+        return;
+    }
+
     Wire.beginTransmission(this->imu_address);
     Wire.write(0x3B); // gets data from registor we want
     Wire.endTransmission(false); // restart arudnio, but keep up communications
