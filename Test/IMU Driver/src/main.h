@@ -3,8 +3,8 @@
 
 #include "Arduino.h"
 
-#define IMU_LIB_TEST
-// #define IMU_PITCH_LIB_TEST
+// #define IMU_LIB_TEST
+#define IMU_PITCH_LIB_TEST
 // #define BLINKING_TEST
 
 
@@ -22,6 +22,7 @@ IMU imu;
 //  |   IMU_PITCH_LIB_TEST    |
 //  +-------------------------+
 #include "IMU.h"
+#include "PitchReading.h"
 
 //  endif IMU_PITCH_LIB_TEST
 #elif defined(BLINKING_TEST)
