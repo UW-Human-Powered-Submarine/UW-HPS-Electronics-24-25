@@ -3,7 +3,8 @@
 IMU::IMU(): IMU(IMU_ADDR_DEFAULT, 100000) {
 }
 
-IMU::IMU(uint8_t imu_address, unsigned long refresh_period_us): Scheduler(refresh_period_us)
+IMU::IMU(uint8_t imu_address, unsigned long refresh_period_us)
+    : Scheduler(refresh_period_us)
     , initialized(false), imu_address(imu_address)
     , x_acceleration(0), y_acceleration(0), z_acceleration(0)
     , x_gyro(0), y_gyro(0), z_gyro(0), temperature(0) {
