@@ -21,10 +21,16 @@ void Scheduler::update() {
 }
 
 void Scheduler::refresh() {
+    this->prev_timestamp_us = micros();    //  record the new timestamp
     this->event();
 }
 
-void Scheduler::set_refresh_period(unsigned long microsecond){
+void Scheduler::refresh_no_timer_reset() {
+    this->event();
+}
+
+void Scheduler::set_refresh_period(unsigned long microsecond)
+{
     this->prev_timestamp_us = microsecond;
 }
 

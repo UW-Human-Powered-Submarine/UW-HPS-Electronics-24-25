@@ -7,6 +7,13 @@ Vector3D::Vector3D(float x, float y, float z)
     : x(x), y(y), z(z) {
 }
 
+Vector3D::Vector3D(const Vector3D &other)
+    : x(other.x), y(other.y), z(other.z) {
+}
+
+Vector3D::~Vector3D() {
+}
+
 float Vector3D::get_x() const { 
     return x; 
 }
@@ -41,6 +48,10 @@ Vector3D Vector3D::operator+(const Vector3D &other) const {
     return Vector3D(x + other.x, y + other.y, z + other.z);
 }
 
+Vector3D Vector3D::operator-(const Vector3D &other) const {
+    return Vector3D(x - other.x, y - other.y, z - other.z);
+}
+
 Vector3D Vector3D::operator*(float scalar) const {
     return this->scalar_multiply(scalar);
 }
@@ -65,12 +76,33 @@ Vector3D Vector3D::project_to(const Vector3D &other) const {
 }
 
 float Vector3D::angle_to(const Vector3D &other) const {
+    //  dot product: A dot B = |A| |B| cos(theta)
+    //               theta = arc cos((A dot B) / (|A| * |B|))
     float A_norm = this->norm();
     float B_norm = other.norm();
+
     if ((abs(A_norm) > 1e-8) && (abs(B_norm) > 1e-8)) {
         return acos(this->dot(other) / (A_norm * B_norm));
     } else {
         // If the vector has zero length, return a zero vector (avoid division by zero)
         return 0.0f;
     }
+}
+
+float Vector3D::angle_to_in_deg(const Vector3D &other) const {
+    return this->angle_to(other) * RAD_TO_DEG;
+}
+
+void Vector3D::println() const {
+    Vector3D::print_vector(*this);
+}
+
+void Vector3D::print_vector(const Vector3D &vec) {
+    Serial.print("[x:");
+    Serial.print(vec.get_x());
+    Serial.print(" y:");
+    Serial.print(vec.get_y());
+    Serial.print(" z:");
+    Serial.print(vec.get_z());
+    Serial.println("]");
 }

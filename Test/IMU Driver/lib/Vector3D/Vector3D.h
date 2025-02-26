@@ -21,12 +21,11 @@
 //  +-------------------------------------------------------------------------+
 
 class Vector3D {
-private:
-    float x, y, z;
-
 public:
     Vector3D();
     Vector3D(float x, float y, float z);
+    Vector3D(const Vector3D& other);
+    ~Vector3D();
 
     float get_x() const;
     float get_y() const;
@@ -36,12 +35,25 @@ public:
     Vector3D scalar_multiply(const float scalar) const;
     Vector3D normalize() const;
     Vector3D operator+(const Vector3D& other) const;
+    Vector3D operator-(const Vector3D& other) const;
     Vector3D operator*(float scalar) const;
     float norm() const;
     Vector3D project_to(const Vector3D& other) const;
 
     //  return radian
     float angle_to(const Vector3D& other) const;
+
+    float angle_to_in_deg(const Vector3D& other) const;
+
+    //  print to serial port
+    void println() const;
+
+    //  print to serial port
+    static void print_vector(const Vector3D& vec);
+
+private:
+    float x, y, z;
+
 };
 
 #endif  // ___VECTOR3D_H___

@@ -46,10 +46,38 @@ void loop() {
 //  +-------------------------+
 
 void setup() {
-    
+    Serial.begin(9600);
+
+    imu.set_refresh_period_ms(500);
+    imu.begin();
+
+    pitch_reading.set_refresh_period_ms(500);
+    pitch_reading.register_imu(&imu);
+
+    Serial.println("Calibrate Gravity Vector...");
+    delay(2000);
+    imu.refresh();
+    pitch_reading.calibrate_gravity(imu.get_acceleration_vec());
+    pitch_reading.get_gravity_calibration().println();
+    delay(2000);
+
+    Serial.println("Calibrate Pitch Direction Vector...");
+    delay(2000);
+    imu.refresh();
+    pitch_reading.calibrate_pitch_direction(imu.get_acceleration_vec());
+    pitch_reading.get_pitch_direction_calibration().println();
+    delay(2000);
 }
 void loop() {
+    imu.update();
+    pitch_reading.update();
+
+    Serial.println();
+    Vector3D::print_vector(imu.get_acceleration_vec().normalize());
+    Serial.print("Pitch = ");
+    Serial.println(pitch_reading.get_pitch_deg());
     
+    delay(500);
 }
 
 //  endif IMU_PITCH_LIB_TEST

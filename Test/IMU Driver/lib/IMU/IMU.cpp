@@ -54,6 +54,14 @@ int16_t IMU::get_temperature() const {
     return this->temperature;
 }
 
+Vector3D IMU::get_acceleration_vec() const {
+    return Vector3D(this->x_acceleration, this->y_acceleration, this->z_acceleration);
+}
+
+Vector3D IMU::get_gyro_vec() const {
+    return Vector3D(this->x_gyro, this->y_gyro, this->z_gyro);
+}
+
 void IMU::event() {
     if (!this->initialized) {
         Serial.println("IMU haven't initialized yet. Run IMU.begin() first. ");
