@@ -1,11 +1,26 @@
 #ifndef ___CHARLIEPLEX_4PIN_H___
 #define ___CHARLIEPLEX_4PIN_H___
 
+//  +-------------------------------------------------------------------------+
+//  |   Charlieplex4Pin handles the multiplex function for the heads-up       |
+//  |       display. Charlieplex4Pin.update() should be called at highest     |
+//  |       frequency (<2ms), and the internal timer regulates the detailed   |
+//  |       refresh schedule.                                                 |
+//  |                                                                         |
+//  |   Call Charlieplex4Pin.update() at highest frequency possible.          |
+//  |       less than about 2 milliseconds,                                   |
+//  |       otherwise the display will be too dim                             |
+//  |                                                                         |
+//  |   Uncomment "#define USE_HANDSOLDERED_BOARD_CONFIG" for handsoldered    |
+//  |       board
+//  |                                                                         |
+//  |   Author     :    Zihui(Andy) Liu <liuzihui@uw.edu>                     |
+//  |   Last Update:    February 24, 2025                                     |
+//  +-------------------------------------------------------------------------+
+
 #include "Arduino.h"
 
 #define USE_HANDSOLDERED_BOARD_CONFIG
-
-
 
 //  loockup table for charlieplex circuit. 
 //  each entry means {high, low, disconnect, disconnect}
@@ -26,9 +41,9 @@ const int CHARLIEPLEX_LED_RED[5] = {5, 4, 0, 1, 2};
 
 class Charlieplex4Pin {
 private:
-    unsigned int refresh_period_us;
+    unsigned long refresh_period_us;
 
-    unsigned int led_on_delay_us = 1000;
+    unsigned long led_on_delay_us = 1000;
     unsigned long prev_timestamp_us = 0;
     
     int pin_array[4];   //  lookup table for pins
@@ -52,8 +67,8 @@ public:
     //  Loop() should call Charlieplex.update() instead of this function
     void refresh() const;
 
-    void set_led_on_delay(int microsecond);
-    void set_refresh_period(int microsecond);
+    void set_led_on_delay(unsigned long microsecond);
+    void set_refresh_period(unsigned long microsecond);
 
     //  Set led state
     //  index from permutation

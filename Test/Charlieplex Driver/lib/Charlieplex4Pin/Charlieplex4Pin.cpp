@@ -66,11 +66,11 @@ void Charlieplex4Pin::refresh() const {
     }
 }
 
-void Charlieplex4Pin::set_led_on_delay(int microsecond) {
+void Charlieplex4Pin::set_led_on_delay(unsigned long microsecond) {
     this->led_on_delay_us = microsecond;
 }
 
-void Charlieplex4Pin::set_refresh_period(int microsecond) {
+void Charlieplex4Pin::set_refresh_period(unsigned long microsecond) {
     this->refresh_period_us = microsecond;
 }
 
