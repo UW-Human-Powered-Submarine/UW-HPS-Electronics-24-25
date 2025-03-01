@@ -15,10 +15,11 @@
 //  |       board
 //  |                                                                         |
 //  |   Author     :    Zihui(Andy) Liu <liuzihui@uw.edu>                     |
-//  |   Last Update:    February 24, 2025                                     |
+//  |   Last Update:    February 26, 2025                                     |
 //  +-------------------------------------------------------------------------+
 
 #include "Arduino.h"
+#include "Scheduler.h"
 
 #define USE_HANDSOLDERED_BOARD_CONFIG
 
@@ -39,36 +40,13 @@ const int CHARLIEPLEX_LED_YELLOW[5] = {10, 7, 3, 6, 9};
 const int CHARLIEPLEX_LED_RED[5] = {5, 4, 0, 1, 2};
 #endif  //  USE_HANDSOLDERED_BOARD_CONFIG
 
-class Charlieplex4Pin {
-private:
-    unsigned long refresh_period_us;
-
-    unsigned long led_on_delay_us = 1000;
-    unsigned long prev_timestamp_us = 0;
-    
-    int pin_array[4];   //  lookup table for pins
-    bool led_states[12];
-
-    void led_on(int pin_high, int pin_low, int pin_disconnect_1, int pin_disconnect_2) const;
-    void led_on_permutation(int permutation_index) const;
-    
-
+class Charlieplex4Pin: public Scheduler {
 public:
     Charlieplex4Pin(int pin0, int pin1, int pin2, int pin3);
     Charlieplex4Pin(int pin0, int pin1, int pin2, int pin3, int refresh_period_microsecond);
     ~Charlieplex4Pin();
 
-    //  Refresh the Charliplex matrix. 
-    //  This should be called at highest frequency possible. 
-    //  The actual frequency is regulated internally 
-    void update();
-
-    //  Forced refresh. 
-    //  Loop() should call Charlieplex.update() instead of this function
-    void refresh() const;
-
     void set_led_on_delay(unsigned long microsecond);
-    void set_refresh_period(unsigned long microsecond);
 
     //  Set led state
     //  index from permutation
@@ -81,6 +59,16 @@ public:
 
     //  Set all states to 0
     void clear_states();
+
+private:
+    unsigned long led_on_delay_us = 1000;
+    
+    int pin_array[4];   //  lookup table for pins
+    bool led_states[12];
+
+    void led_on(int pin_high, int pin_low, int pin_disconnect_1, int pin_disconnect_2) const;
+    void led_on_permutation(int permutation_index) const;
+    void event() override;
 };
 
 #endif  //  ___CHARLIEPLEX_H___
