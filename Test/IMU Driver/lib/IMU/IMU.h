@@ -11,6 +11,20 @@
 //  |   Calling IMU.update() at high frequency will automatically update      |
 //  |       internal field at set interval.                                   |
 //  |                                                                         |
+//  |   Pinout:                                                               |
+//  |       +---------------+       +---------------+                         |
+//  |       |               |       |               |                         |
+//  |       | IMU       VCC +-------+ 5V            |                         |
+//  |       | MPU-6050  GND +-------+ GND           |                         |
+//  |       |           SCL +-------+ A5            |                         |
+//  |       |           SDA +-------+ A4            |                         |
+//  |       |           XCL |       |               |                         |
+//  |       |           XDA |       |       Arduino |                         |
+//  |       |           AD0 |       |   Uno or Nano |                         |
+//  |       |           INT |       +---------------+                         |
+//  |       |               |                                                 |
+//  |       +---------------+                                                 |
+//  |                                                                         |
 //  |   Author     :    Zihui(Andy) Liu <liuzihui@uw.edu>                     |
 //  |   Last Update:    February 25, 2025                                     |
 //  |                                                                         |
