@@ -39,6 +39,9 @@
 #include "Scheduler.h"
 #include "MS5837.h"
 
+#define DENSITY_FRESH_WATER_KGPM 997
+#define DENSITY_SEA_WATER_KGPM 1029
+
 class PressureSensor: public Scheduler {
     public:
         PressureSensor();
@@ -47,6 +50,18 @@ class PressureSensor: public Scheduler {
     
         //  initialize PressureSensor, start the communication
         void begin();
+
+        float get_pressure_mbar() const;
+        float get_depth_m() const;
+        float get_temperature_c() const;
+    
+        void calibrate_depth_zero(float zero_depth_m);
+        void calibrate_depth_zero_using_current_reading();
+
+        void in_fresh_water();
+        void in_sea_water();
+        void fluid_density(float density_kgpm3);
+
     private:
         MS5837 sensor;
         bool initialized;

@@ -46,11 +46,20 @@ void loop() {
 //  | PRESSURE_SCHEDULER_TEST |
 //  +-------------------------+
 void setup() {
+    Serial.begin(9600);
 
+    pressure_sensor.begin();
+    pressure_sensor.calibrate_depth_zero_using_current_reading();
 }
 
 void loop() {
+    pressure_sensor.update();
+    
+    Serial.print("depth = ");
+    Serial.print(pressure_sensor.get_depth_m());
+    Serial.println();
 
+    delay(1000);
 }
 
 #elif defined(BLINKING_TEST)

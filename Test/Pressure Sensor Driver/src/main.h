@@ -4,8 +4,8 @@
 
 #include <Arduino.h>
 
-#define PRESSURE_LIB_TEST
-// #define PRESSURE_SCHEDULER_TEST
+// #define PRESSURE_LIB_TEST
+#define PRESSURE_SCHEDULER_TEST
 // #define BLINKING_TEST
 
 
@@ -27,8 +27,9 @@ MS5837 sensor;
 //  +-------------------------+
 //  | PRESSURE_SCHEDULER_TEST |
 //  +-------------------------+
-#include <Wire.h>
-#include "MS5837.h"
+
+#include "PressureSensor.h"
+PressureSensor pressure_sensor;
 
 //  endif IMU_PITCH_LIB_TEST
 #elif defined(BLINKING_TEST)
