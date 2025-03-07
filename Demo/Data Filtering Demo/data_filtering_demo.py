@@ -11,10 +11,8 @@ def FIR(signal, N):
     signal_processed = []
     
     for reading in signal:
-        x.append(reading)
-        x_out = x.pop(0)
-        
-        y += (reading - x_out) / N
+        # here
+        y = reading     # identity
         
         signal_processed.append(y)
         
@@ -26,8 +24,8 @@ def IIR(signal, lam):
     signal_processed = []
     
     for reading in signal:
-    
-        y = lam * y + (1-lam) * reading
+        # here
+        y = reading     # identity
         
         signal_processed.append(y)
         
@@ -92,11 +90,11 @@ signal = np.sign(np.sin(t))
 
 signal_w_noise = signal + np.random.normal(0, 0.5, t.shape)
 
-# signal_processed = FIR(signal_w_noise, 20)
+signal_processed = FIR(signal_w_noise, 20)
 # signal_processed = IIR(signal_w_noise, 0.99)
 
 # signal_processed = windowed_mean(signal_w_noise, 20)
-signal_processed = gaussian_filter(signal_w_noise)
+# signal_processed = gaussian_filter(signal_w_noise)
 
 # signal_processed = edge_detection(signal_w_noise)
 # signal_processed = edge_detection_large(signal_w_noise, 10, 0.1)
