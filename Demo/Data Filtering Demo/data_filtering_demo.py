@@ -12,7 +12,12 @@ def FIR(signal, N):
     
     for reading in signal:
         # here
-        y = reading     # identity
+        x_n = reading
+        
+        x.append(x_n)
+        x_n_N_1 = x.pop(0)
+        
+        y = y + x_n/N - x_n_N_1/N
         
         signal_processed.append(y)
         
@@ -25,7 +30,7 @@ def IIR(signal, lam):
     
     for reading in signal:
         # here
-        y = reading     # identity
+        y = lam * y + (1-lam) * reading  
         
         signal_processed.append(y)
         
@@ -79,7 +84,7 @@ num_points = 500
 t = np.linspace(0, 5 * np.pi, num_points) 
 
 # sine wave
-signal = np.sin(t)
+# signal = np.sin(t)
 
 # delta
 # signal = np.zeros_like(t)
@@ -90,7 +95,7 @@ signal = np.sign(np.sin(t))
 
 signal_w_noise = signal + np.random.normal(0, 0.5, t.shape)
 
-signal_processed = FIR(signal_w_noise, 20)
+# signal_processed = FIR(signal_w_noise, 50)
 # signal_processed = IIR(signal_w_noise, 0.99)
 
 # signal_processed = windowed_mean(signal_w_noise, 20)
@@ -98,14 +103,14 @@ signal_processed = FIR(signal_w_noise, 20)
 
 # signal_processed = edge_detection(signal_w_noise)
 # signal_processed = edge_detection_large(signal_w_noise, 10, 0.1)
-# signal_processed = edge_detection(windowed_mean(signal_w_noise, 20))
+signal_processed = edge_detection(windowed_mean(signal_w_noise, 20))
 
 #--------------------------------------------------------------------------------------------------
 # Plot Setups
-fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, sharex=True, figsize=(12, 12))
+fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, sharex=True, figsize=(12, 9))
 
 line_signal_w_noise, = ax1.plot([], [], 'r-', label="Noisy Signal")
-line_signal, = ax1.plot([], [], 'k-', label="Signal")
+line_signal, = ax1.plot([], [], 'k-', label="Signal", linewidth=3)
 
 line_signal_w_noise_p2, = ax2.plot([], [], 'r-', alpha=0.5, label="Noisy Signal")
 line_signal_processed, = ax2.plot([], [], 'b-', label="Processed Signal")
