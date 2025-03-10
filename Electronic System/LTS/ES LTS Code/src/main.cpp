@@ -9,34 +9,29 @@ void setup() {
 }
 
 void loop() {
-    FSM_TICK(BLINK)
+    blink_update();
 }
 
 
-//  +-----------------------------------------------------------------------------------+
-//  |                          Blinking Builtin LED, Status LED                         |
-//  +-----------------------------------------------------------------------------------+
-FSM_TICK_FUNCTION_W_SCHEDULER(BLINK, 
+//  +--------------------------Blinking Builtin LED, Status LED-------------------------+
+void blink_update() {
+    SETUP_FSM(BLINK);
 
-    //  Initialization BLINK
-    FSM_MOORE_EVENT(0, 
+    STATE(0) {
         pinMode(PIN_LED_BUILTIN, OUTPUT);
-    )
-    FSM_TRANSITION(0, 1, true)
+        TO_NEXT;
+    }
 
-    //  Turn the LED ON
-    FSM_MOORE_EVENT(1, 
+    STATE(1) {
         digitalWrite(PIN_LED_BUILTIN, HIGH);
-        FSM_SCHDR_SLEEP_TRNS(DELAY_INTERVAL_LED_BUILTIN, 2)
-    )
+        SLEEP_TO_NEXT(DELAY_INTERVAL_LED_BUILTIN);
+    }
 
-    //  Turn the LED off
-    FSM_MOORE_EVENT(2, 
-        // Serial.println("here2");
+    STATE(2) {
         digitalWrite(PIN_LED_BUILTIN, LOW);
-        FSM_SCHDR_SLEEP_TRNS(DELAY_INTERVAL_LED_BUILTIN, 1)
-    )
-)
+        SLEEP_TO(DELAY_INTERVAL_LED_BUILTIN, 1);
+    }
+}
 
 
 #elif defined(SYSTEM_TEST)

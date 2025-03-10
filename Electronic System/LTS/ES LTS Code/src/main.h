@@ -14,15 +14,14 @@
 #include "EEPROM.h"
 #include "Wire.h"
 
-#include "FiniteStateMachineMacro.h"
+#include "FSMMacroV2.h"
 
 
-//  +-----------------------------------------------------------------------------------+
-//  |                          Blinking Builtin LED, Status LED                         |
-//  +-----------------------------------------------------------------------------------+
+//  +--------------------------Blinking Builtin LED, Status LED-------------------------+
 #define PIN_LED_BUILTIN 13
 #define DELAY_INTERVAL_LED_BUILTIN 500
-FSM_CREATE_W_SCHEDULER(BLINK, 0)
+CREATE_FSM(BLINK, 0)
+void blink_update();
 
 
 

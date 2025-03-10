@@ -1,14 +1,12 @@
 # Finite State Machine Macro
 Author: Zihui(Andy) Liu <liuzihui@uw.edu, salzhx@gmail.com>  
-Last Update: Jan 3, 2021
-***
+Last Update: March 10, 2025
 
 ## Overview
 Macro version of the FSM lib.
 
 This is the library that helps the development of Finite State Machine (FSM). It handles many details of FSM, state variable, and transition, so the user can focus on its content. 
 
-***
 ## Interfaces
 ### FSM Initialization
 - `FSM_CREATE(fsmName, initialState)`
@@ -90,7 +88,25 @@ All functions must be used inside Moore event `FSM_MOORE_EVENT(state, event)`.
 - `FSM_SCHDR_SLEEP_UNTIL_TRSN_NEXT(delayTime_ms)`
   - FSM will wait until given time `delayTime_ms`, and resume back to next state.
 
-***
+## FSM Macro V2
+This is a simplification from FiniteStateMachineMacro.h based on my (Andy's) experiences of using the macro class. The resulting code is more natural to C++ code. However, it doesn't enforce the rigorous FSM structure, especially when using `SLEEP()` related functions.
+
+Check **Example 3** and **4** to see the differences.
+
+**NOTE**: State actions must write in front of all transitions. 
+
+- `CREATE_FSM(fsm_name, init_state)`
+- `RESET_FSM(fsm_name)`
+- `SETUP_FSM(fsm_name)`
+- `STATE(state)`
+- `WHEN(bool_expr)`
+- `FROM(state)`
+- `TO(state)`
+- `TO_NEXT()`
+- `SLEEP(delay_time_ms)`
+- `SLEEP_TO(delay_time_ms, state)`
+- `SLEEP_TO_NEXT(delay_time_ms)`
+
 ## Example 1
 The following example is an Arduino code of toggle button. 
 - When the button is pressed (`digitalRead(12) == 0`), the onboard LED (pin 13) turns on, and pressing the button again turns off the onboard LED.
@@ -154,7 +170,7 @@ FSM_TICK_FUNCTION(fsm1,
 )
 ```
 
-## Example 2
+## Example 2 (FSM Scheduler)
 The following example is the default Arduino blinking example implemented using FSM Scheduler.
 ``` C++
 #include "FiniteStateMachineMacro.h"
@@ -184,7 +200,141 @@ FSM_TICK_FUNCTION_W_SCHEDULER(blink,
 )
 ```
 
-***
+## Example 3 (FSM Macro V2)
+The following example is the default Arduino blinking example implemented using FSM Macro V2.
+```C++
+#include "FSMMacroV2.h"
+
+#define PIN_LED_BUILTIN 13
+CREATE_FSM(BLINK, 0)
+void blink_update();
+
+void setup() {  }
+
+void loop() {
+  blink_update();
+}
+
+void blink_update() {
+  SETUP_FSM(BLINK);
+
+  STATE(0) {
+    pinMode(PIN_LED_BUILTIN, OUTPUT);
+    TO_NEXT();
+  }
+
+  STATE(1) {
+    digitalWrite(PIN_LED_BUILTIN, HIGH);
+    SLEEP_TO_NEXT(1000);
+  }
+
+  STATE(2) {
+    digitalWrite(PIN_LED_BUILTIN, LOW);
+    SLEEP_TO(1000, 1);
+  }
+}
+```
+
+## Example 4 (FSM Macro V2)
+Remake Example 1 using FSM Macro
+``` C++
+#include "FSMMacroV2.h"
+
+//  create FSM named fsm1 with initial state 0
+CREATE_FSM(fsm1, 0)
+fsm1_update();
+
+void setup() {
+  pinMode(13, OUTPUT);        // onboard LED
+  pinMode(12, INPUT_PULLUP);  // input button
+}
+
+void loop() {
+  fsm1_update();
+  delay(100);  // "clock speed"
+}
+
+//  Input checks
+//  Button pressed
+#define A (digitalRead(12) == 0)
+
+//  Button released
+#define A_ (digitalRead(12) != 0)
+
+//  State code:
+//  0:  Initial State
+//  1:  LED off, button released
+//  10: LED off, button pressed (intermediate state)
+//  2:  LED on,  button released
+//  20: LED on,  button pressed (intermediate state)
+
+//  User can use enum to improve readability
+
+fsm1_update() {
+  //  INIT, Moore events
+  STATE(0) { digitalWrite(13, LOW); }
+
+  //  LED_ON, Mealy event
+  FROM(10) WHEN(A_) { digitalWrite(13, HIGH); }
+
+  //  LED_OFF
+  FROM(10) WHEN(A_) { digitalWrite(13, LOW); }
+
+  //  Transitions
+  FROM(0)  TO(1)
+  FROM(1)  WHEN(A)  TO(10)
+  FROM(10) WHEN(A_) TO(2)
+  FROM(2)  WHEN(A)  TO(20)
+  FROM(20) WHEN(A_) TO(1)
+}
+```
+
+Or, we can use V2 style:
+``` C++
+#include "FSMMacroV2.h"
+
+//  create FSM named fsm1 with initial state 0
+CREATE_FSM(fsm1, 0)
+fsm1_update();
+
+void setup() {  }
+
+void loop() {
+  fsm1_update();
+  delay(100);  // "clock speed"
+}
+
+//  Input checks
+//  Button pressed
+#define A (digitalRead(12) == 0)
+
+//  Button released
+#define A_ (digitalRead(12) != 0)
+
+fsm1_update() {
+  STATE(0) {
+    pinMode(13, OUTPUT);        // onboard LED
+    pinMode(12, INPUT_PULLUP);  // input button
+    digitalWrite(13, LOW); 
+  }
+
+  STATE(1) WHEN(A) TO(10)
+
+  STATE(10) WHEN(A_) { 
+    digitalWrite(13, HIGH); 
+    TO(2); 
+  }
+
+  STATE(2) WHEN(A) TO(20)
+
+  STATE(20) WHEN(A_) {
+    digitalWrite(13, LOW); 
+    TO(2); 
+  }
+}
+```
+
+
 ## Note
 - `FSM_STATE_VARIABLE_TYPE` defines the type of state variable (default: `unsigned char`, 1 byte). User is able to overwrite the type to increase the total number of states by following code: 
 ``` C++
@@ -199,13 +349,13 @@ FSM_TICK_FUNCTION_W_SCHEDULER(blink,
   - `__ns`: Next State.
   - `__resumeTime`: The time when current FSM resume operation/
 
-***
 ## Dependency
 - The library is developed with the C++11 preprocessor and tested using the C++ compiler. However, it *should* be compatible with C (NOT TESTED). 
 
-***
 ## Update History
 - Oct 2, 2021
   - Added basic functionalities of Finite State Machine.
 - Jan 3, 2022
   - Added scheduler.
+- Mar 9, 2025
+  - Added FSMMacroV2
