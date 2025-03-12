@@ -71,8 +71,24 @@ protected:
     void event() override;
 };
 
+
+//  The driver with blinking function
 class Charlieplex4PinBlink: public Charlieplex4Pin {
-    
-}
+public:
+    Charlieplex4PinBlink(int pin0, int pin1, int pin2, int pin3);
+    Charlieplex4PinBlink(
+        int pin0, int pin1, int pin2, int pin3, 
+        unsigned long slow_blink_period_ms, unsigned long fast_blink_period_ms
+    );
+    Charlieplex4PinBlink(
+        int pin0, int pin1, int pin2, int pin3, 
+        int refresh_period_microsecond, 
+        unsigned long slow_blink_period_ms, unsigned long fast_blink_period_ms
+    );
+    ~Charlieplex4PinBlink();
+private:
+    unsigned long slow_blink_period_ms;
+    unsigned long fast_blink_period_ms;
+};
 
 #endif  //  ___CHARLIEPLEX_H___

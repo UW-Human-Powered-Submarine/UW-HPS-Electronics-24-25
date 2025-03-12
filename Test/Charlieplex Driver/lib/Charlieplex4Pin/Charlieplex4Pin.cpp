@@ -87,3 +87,27 @@ void Charlieplex4Pin::event() {
         digitalWrite(pin_array[i], LOW);
     }
 }
+
+Charlieplex4PinBlink::Charlieplex4PinBlink(int pin0, int pin1, int pin2, int pin3)
+    : Charlieplex4PinBlink(pin0, pin1, pin2, pin3, 250, 500) {
+}
+
+Charlieplex4PinBlink::Charlieplex4PinBlink(
+    int pin0, int pin1, int pin2, int pin3, 
+    unsigned long slow_blink_period_ms, unsigned long fast_blink_period_ms
+)
+    : Charlieplex4Pin(pin0, pin1, pin2, pin3)
+    , slow_blink_period_ms(slow_blink_period_ms), fast_blink_period_ms(fast_blink_period_ms) {
+}
+
+Charlieplex4PinBlink::Charlieplex4PinBlink(
+    int pin0, int pin1, int pin2, int pin3, 
+    int refresh_period_microsecond, 
+    unsigned long slow_blink_period_ms, unsigned long fast_blink_period_ms
+)
+    : Charlieplex4Pin(pin0, pin1, pin2, pin3, refresh_period_microsecond)
+    , slow_blink_period_ms(slow_blink_period_ms), fast_blink_period_ms(fast_blink_period_ms) {
+}
+
+Charlieplex4PinBlink::~Charlieplex4PinBlink() {
+}
