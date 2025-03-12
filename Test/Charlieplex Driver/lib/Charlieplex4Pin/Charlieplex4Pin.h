@@ -60,7 +60,7 @@ public:
     //  Set all states to 0
     void clear_states();
 
-private:
+protected:
     unsigned long led_on_delay_us = 1000;
     
     int pin_array[4];   //  lookup table for pins
@@ -70,5 +70,9 @@ private:
     void led_on_permutation(int permutation_index) const;
     void event() override;
 };
+
+class Charlieplex4PinBlink: public Charlieplex4Pin {
+    
+}
 
 #endif  //  ___CHARLIEPLEX_H___
