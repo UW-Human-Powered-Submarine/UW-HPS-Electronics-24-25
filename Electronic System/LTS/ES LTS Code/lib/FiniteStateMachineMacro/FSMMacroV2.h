@@ -48,5 +48,7 @@ unsigned long *__resume_time = &FSM_ ## fsm_name ## _resume_time;
 #define SLEEP_TO_NEXT(delay_time_ms) \
 { *__resume_time = millis() + delay_time_ms; ++(*__global_state); return; }
 
+#define GET_STATE(fsm_name) FSM_ ## fsm_name ## _state
+
 
 #endif // __FINITE_STATE_MACHINE_MACRO_V2_H__
