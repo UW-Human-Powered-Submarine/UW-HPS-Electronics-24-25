@@ -43,27 +43,27 @@ bool Charlieplex4Pin::get_led_state(int index_permutation) const {
 }
 
 void Charlieplex4Pin::set_green_led(int index, bool state) {
-    this->led_states[CHARLIEPLEX_LED_GREEN[index]] = state;
+    this->set_led_state(CHARLIEPLEX_LED_GREEN[index], state);
 }
 
 bool Charlieplex4Pin::get_green_led(int index) const {
-    return this->led_states[CHARLIEPLEX_LED_GREEN[index]];
+    return this->get_led_state(CHARLIEPLEX_LED_GREEN[index]);
 }
 
 void Charlieplex4Pin::set_red_led(int index, bool state) {
-    this->led_states[CHARLIEPLEX_LED_RED[index]] = state;
+    this->set_led_state(CHARLIEPLEX_LED_RED[index], state);
 }
 
 bool Charlieplex4Pin::get_red_led(int index) const {
-    return this->led_states[CHARLIEPLEX_LED_RED[index]];
+    return this->get_led_state(CHARLIEPLEX_LED_RED[index]);
 }
 
 void Charlieplex4Pin::set_yellow_led(int index, bool state) {
-    this->led_states[CHARLIEPLEX_LED_YELLOW[index]] = state;
+    this->set_led_state(CHARLIEPLEX_LED_YELLOW[index], state);
 }
 
 bool Charlieplex4Pin::get_yellow_led(int index) const {
-    return this->led_states[CHARLIEPLEX_LED_YELLOW[index]];
+    return this->get_led_state(CHARLIEPLEX_LED_YELLOW[index]);
 }
 
 void Charlieplex4Pin::clear_states() {
@@ -144,6 +144,11 @@ Charlieplex4PinBlink::~Charlieplex4PinBlink() {
 
 void Charlieplex4PinBlink::set_led_state(int index_permutation, CharlieplexBlinkStates state_blink) {
     this->led_blink_states[index_permutation] = state_blink;
+    if (state_blink == CharlieplexBlinkStates::CBS_ON) {
+        Charlieplex4Pin::set_led_state(index_permutation, true);
+    } else if (state_blink == CharlieplexBlinkStates::CBS_OFF) {
+        Charlieplex4Pin::set_led_state(index_permutation, false);
+    }
 }
 
 CharlieplexBlinkStates Charlieplex4PinBlink::get_led_state(int index_permutation) const {
@@ -152,27 +157,27 @@ CharlieplexBlinkStates Charlieplex4PinBlink::get_led_state(int index_permutation
 
 void Charlieplex4PinBlink::set_green_led(int index, CharlieplexBlinkStates state_blink)
 {
-    this->led_blink_states[CHARLIEPLEX_LED_GREEN[index]] = state_blink;
+    this->set_led_state(CHARLIEPLEX_LED_GREEN[index], state_blink);
 }
 
 CharlieplexBlinkStates Charlieplex4PinBlink::get_green_led(int index) const {
-    return this->led_blink_states[CHARLIEPLEX_LED_GREEN[index]];
+    return this->get_led_state(CHARLIEPLEX_LED_GREEN[index]);
 }
 
 void Charlieplex4PinBlink::set_red_led(int index, CharlieplexBlinkStates state_blink) {
-    this->led_blink_states[CHARLIEPLEX_LED_RED[index]] = state_blink;
+    this->set_led_state(CHARLIEPLEX_LED_RED[index], state_blink);
 }
 
 CharlieplexBlinkStates Charlieplex4PinBlink::get_red_led(int index) const {
-    return this->led_blink_states[CHARLIEPLEX_LED_RED[index]];
+    return this->get_led_state(CHARLIEPLEX_LED_RED[index]);
 }
 
 void Charlieplex4PinBlink::set_yellow_led(int index, CharlieplexBlinkStates state_blink) {
-    this->led_blink_states[CHARLIEPLEX_LED_YELLOW[index]] = state_blink;
+    this->set_led_state(CHARLIEPLEX_LED_YELLOW[index], state_blink);
 }
 
 CharlieplexBlinkStates Charlieplex4PinBlink::get_yellow_led(int index) const {
-    return this->led_blink_states[CHARLIEPLEX_LED_YELLOW[index]];
+    return this->get_led_state(CHARLIEPLEX_LED_YELLOW[index]);
 }
 
 void Charlieplex4PinBlink::set_slow_blink_period_ms(unsigned long milliseconds) {

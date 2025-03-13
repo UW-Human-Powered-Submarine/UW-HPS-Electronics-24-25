@@ -54,6 +54,7 @@ void setup() {
 void loop() {
     hud.update();
     main_loop_update();
+    blink_update();
 }
 
 void main_loop_update() {
@@ -67,19 +68,38 @@ void main_loop_update() {
     STATE(1) {
         hud.set_yellow_led(light_counter % 5,           CharlieplexBlinkStates::CBS_OFF);
         hud.set_yellow_led((light_counter + 1) % 5,     CharlieplexBlinkStates::CBS_ON);
-        hud.set_yellow_led((light_counter + 1)  % 5,    CharlieplexBlinkStates::CBS_BLINK_SLOW);
-        hud.set_yellow_led((light_counter + 1)  % 5,    CharlieplexBlinkStates::CBS_BLINK_FAST);
+        hud.set_yellow_led((light_counter + 2)  % 5,    CharlieplexBlinkStates::CBS_BLINK_SLOW);
+        hud.set_yellow_led((light_counter + 3)  % 5,    CharlieplexBlinkStates::CBS_BLINK_FAST);
 
         hud.set_red_led(light_counter % 5,          CharlieplexBlinkStates::CBS_OFF);
         hud.set_red_led((light_counter + 1) % 5,    CharlieplexBlinkStates::CBS_ON);
-        hud.set_red_led((light_counter + 1)  % 5,   CharlieplexBlinkStates::CBS_BLINK_SLOW);
-        hud.set_red_led((light_counter + 1)  % 5,   CharlieplexBlinkStates::CBS_BLINK_FAST);
+        hud.set_red_led((light_counter + 2)  % 5,   CharlieplexBlinkStates::CBS_BLINK_SLOW);
+        hud.set_red_led((light_counter + 3)  % 5,   CharlieplexBlinkStates::CBS_BLINK_FAST);
 
         hud.set_green_led(0, static_cast<CharlieplexBlinkStates>(light_counter % 4));
         hud.set_green_led(1, static_cast<CharlieplexBlinkStates>((light_counter + 1) % 4));
 
         light_counter = (light_counter + 1) % 10;
         SLEEP(2000);
+    }
+}
+
+void blink_update() {
+    SETUP_FSM(BLINK);
+
+    STATE(0) {
+        pinMode(PIN_LED_BUILTIN, OUTPUT);
+        TO_NEXT;
+    }
+
+    STATE(1) {
+        digitalWrite(PIN_LED_BUILTIN, HIGH);
+        SLEEP_TO_NEXT(DELAY_INTERVAL_LED_BUILTIN);
+    }
+
+    STATE(2) {
+        digitalWrite(PIN_LED_BUILTIN, LOW);
+        SLEEP_TO(DELAY_INTERVAL_LED_BUILTIN, 1);
     }
 }
 

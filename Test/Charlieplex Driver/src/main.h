@@ -34,6 +34,11 @@ CREATE_FSM(main_loop, 0)
 void main_loop_update();
 int light_counter;
 
+#define PIN_LED_BUILTIN 13
+#define DELAY_INTERVAL_LED_BUILTIN 500
+CREATE_FSM(BLINK, 0)
+void blink_update();
+
 #elif defined(BLINKING_TEST)
 //  +-------------------------+
 //  |      BLINKING_TEST      |
