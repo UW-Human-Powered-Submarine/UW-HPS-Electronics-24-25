@@ -125,9 +125,7 @@ Charlieplex4PinBlink::Charlieplex4PinBlink(
     , slow_blink_resume_time_ms(0), slow_blink_current_status(false)
     , fast_blink_resume_time_ms(0), fast_blink_current_status(false) {
 
-    for (int i = 0; i < 12; i++) {
-        this->led_blink_states[i] = CharlieplexBlinkStates::CBS_OFF;
-    }
+    this->clear_states();
 }
 
 Charlieplex4PinBlink::Charlieplex4PinBlink(
@@ -138,15 +136,22 @@ Charlieplex4PinBlink::Charlieplex4PinBlink(
     : Charlieplex4Pin(pin0, pin1, pin2, pin3, refresh_period_microsecond)
     , slow_blink_period_ms(slow_blink_period_ms), fast_blink_period_ms(fast_blink_period_ms) {
 
-    for (int i = 0; i < 12; i++) {
-            this->led_blink_states[i] = CharlieplexBlinkStates::CBS_OFF;
-        }
+    this->clear_states();
 }
 
 Charlieplex4PinBlink::~Charlieplex4PinBlink() {
 }
 
-void Charlieplex4PinBlink::set_green_led(int index, CharlieplexBlinkStates state_blink) {
+void Charlieplex4PinBlink::set_led_state(int index_permutation, CharlieplexBlinkStates state_blink) {
+    this->led_blink_states[index_permutation] = state_blink;
+}
+
+CharlieplexBlinkStates Charlieplex4PinBlink::get_led_state(int index_permutation) const {
+    return this->led_blink_states[index_permutation];
+}
+
+void Charlieplex4PinBlink::set_green_led(int index, CharlieplexBlinkStates state_blink)
+{
     this->led_blink_states[CHARLIEPLEX_LED_GREEN[index]] = state_blink;
 }
 
@@ -184,6 +189,14 @@ void Charlieplex4PinBlink::set_fast_blink_period_ms(unsigned long milliseconds) 
 
 unsigned long Charlieplex4PinBlink::get_fast_blink_period_ms() const {
     return this->fast_blink_period_ms;
+}
+
+void Charlieplex4PinBlink::clear_states() {
+    for (int i = 0; i < 12; i++) {
+        this->led_blink_states[i] = CharlieplexBlinkStates::CBS_OFF;
+    }
+
+    Charlieplex4Pin::clear_states();
 }
 
 void Charlieplex4PinBlink::event() {

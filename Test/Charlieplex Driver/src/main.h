@@ -30,6 +30,9 @@ unsigned long last_entry_ms = 0;
 
 Charlieplex4PinBlink hud(2, 3, 4, 5);
 
+CREATE_FSM(main_loop, 0)
+void main_loop_update();
+int light_counter;
 
 #elif defined(BLINKING_TEST)
 //  +-------------------------+

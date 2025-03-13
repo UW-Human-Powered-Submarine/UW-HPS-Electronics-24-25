@@ -102,6 +102,11 @@ public:
     );
     ~Charlieplex4PinBlink();
 
+    //  Set led state
+    //  index from permutation
+    void set_led_state(int index_permutation, CharlieplexBlinkStates state_blink);
+    CharlieplexBlinkStates get_led_state(int index_permutation) const;
+
     void set_green_led(int index, CharlieplexBlinkStates state_blink);
     CharlieplexBlinkStates get_green_led(int index) const;
     void set_red_led(int index, CharlieplexBlinkStates state_blink);
@@ -114,6 +119,8 @@ public:
     void set_fast_blink_period_ms(unsigned long milliseconds); 
     unsigned long get_fast_blink_period_ms() const;
 
+    //  Set all states to CBS_OFF state
+    void clear_states(); 
 
 private:
     unsigned long slow_blink_period_ms;

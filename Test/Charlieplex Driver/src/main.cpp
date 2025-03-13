@@ -47,12 +47,41 @@ void led_update() {
 
 void setup() {
     Serial.begin(9600);
+    hud.set_fast_blink_period_ms(100);
+    hud.set_slow_blink_period_ms(200);
 }
 
 void loop() {
     hud.update();
+    main_loop_update();
 }
 
+void main_loop_update() {
+    SETUP_FSM(main_loop)
+
+    STATE(0) {
+        light_counter = 0;
+        TO_NEXT;
+    }
+
+    STATE(1) {
+        hud.set_yellow_led(light_counter % 5,           CharlieplexBlinkStates::CBS_OFF);
+        hud.set_yellow_led((light_counter + 1) % 5,     CharlieplexBlinkStates::CBS_ON);
+        hud.set_yellow_led((light_counter + 1)  % 5,    CharlieplexBlinkStates::CBS_BLINK_SLOW);
+        hud.set_yellow_led((light_counter + 1)  % 5,    CharlieplexBlinkStates::CBS_BLINK_FAST);
+
+        hud.set_red_led(light_counter % 5,          CharlieplexBlinkStates::CBS_OFF);
+        hud.set_red_led((light_counter + 1) % 5,    CharlieplexBlinkStates::CBS_ON);
+        hud.set_red_led((light_counter + 1)  % 5,   CharlieplexBlinkStates::CBS_BLINK_SLOW);
+        hud.set_red_led((light_counter + 1)  % 5,   CharlieplexBlinkStates::CBS_BLINK_FAST);
+
+        hud.set_green_led(0, static_cast<CharlieplexBlinkStates>(light_counter % 4));
+        hud.set_green_led(1, static_cast<CharlieplexBlinkStates>((light_counter + 1) % 4));
+
+        light_counter = (light_counter + 1) % 10;
+        SLEEP(2000);
+    }
+}
 
  
 #elif defined(BLINKING_TEST)
