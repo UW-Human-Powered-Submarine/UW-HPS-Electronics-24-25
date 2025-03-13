@@ -1,5 +1,8 @@
 #include "main.h"
-#ifndef BLINKING_TEST
+#if defined(Charlieplex4Pin_TEST) 
+//  +-------------------------+
+//  |  Charlieplex4Pin_TEST   |
+//  +-------------------------+
 
 void setup() {
     Serial.begin(9600);
@@ -37,8 +40,75 @@ void led_update() {
     }   
 }
 
+#elif defined(Charlieplex4PinBlink_TEST)
+//  +-------------------------+
+//  |Charlieplex4PinBlink_TEST|
+//  +-------------------------+
 
-#else
+void setup() {
+    Serial.begin(9600);
+    hud.set_fast_blink_period_ms(100);
+    hud.set_slow_blink_period_ms(200);
+}
+
+void loop() {
+    hud.update();
+    main_loop_update();
+    blink_update();
+}
+
+void main_loop_update() {
+    SETUP_FSM(main_loop)
+
+    STATE(0) {
+        light_counter = 0;
+        TO_NEXT;
+    }
+
+    STATE(1) {
+        hud.set_yellow_led(light_counter % 5,           CharlieplexBlinkStates::CBS_OFF);
+        hud.set_yellow_led((light_counter + 1) % 5,     CharlieplexBlinkStates::CBS_ON);
+        hud.set_yellow_led((light_counter + 2)  % 5,    CharlieplexBlinkStates::CBS_BLINK_SLOW);
+        hud.set_yellow_led((light_counter + 3)  % 5,    CharlieplexBlinkStates::CBS_BLINK_FAST);
+
+        hud.set_red_led(light_counter % 5,          CharlieplexBlinkStates::CBS_OFF);
+        hud.set_red_led((light_counter + 1) % 5,    CharlieplexBlinkStates::CBS_ON);
+        hud.set_red_led((light_counter + 2)  % 5,   CharlieplexBlinkStates::CBS_BLINK_SLOW);
+        hud.set_red_led((light_counter + 3)  % 5,   CharlieplexBlinkStates::CBS_BLINK_FAST);
+
+        hud.set_green_led(0, static_cast<CharlieplexBlinkStates>(light_counter % 4));
+        hud.set_green_led(1, static_cast<CharlieplexBlinkStates>((light_counter + 1) % 4));
+
+        light_counter = (light_counter + 1) % 10;
+        SLEEP(2000);
+    }
+}
+
+void blink_update() {
+    SETUP_FSM(BLINK);
+
+    STATE(0) {
+        pinMode(PIN_LED_BUILTIN, OUTPUT);
+        TO_NEXT;
+    }
+
+    STATE(1) {
+        digitalWrite(PIN_LED_BUILTIN, HIGH);
+        SLEEP_TO_NEXT(DELAY_INTERVAL_LED_BUILTIN);
+    }
+
+    STATE(2) {
+        digitalWrite(PIN_LED_BUILTIN, LOW);
+        SLEEP_TO(DELAY_INTERVAL_LED_BUILTIN, 1);
+    }
+}
+
+ 
+#elif defined(BLINKING_TEST)
+//  +-------------------------+
+//  |      BLINKING_TEST      |
+//  +-------------------------+
+
 //  BLINKING TEST CODE
 #define DELAY_MS 500
 #define LED_PIN 13
