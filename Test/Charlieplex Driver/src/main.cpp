@@ -1,5 +1,8 @@
 #include "main.h"
-#ifndef BLINKING_TEST
+#if defined(Charlieplex4Pin_TEST) 
+//  +-------------------------+
+//  |  Charlieplex4Pin_TEST   |
+//  +-------------------------+
 
 void setup() {
     Serial.begin(9600);
@@ -37,8 +40,26 @@ void led_update() {
     }   
 }
 
+#elif defined(Charlieplex4PinBlink_TEST)
+//  +-------------------------+
+//  |Charlieplex4PinBlink_TEST|
+//  +-------------------------+
 
-#else
+void setup() {
+    Serial.begin(9600);
+}
+
+void loop() {
+    hud.update();
+}
+
+
+ 
+#elif defined(BLINKING_TEST)
+//  +-------------------------+
+//  |      BLINKING_TEST      |
+//  +-------------------------+
+
 //  BLINKING TEST CODE
 #define DELAY_MS 500
 #define LED_PIN 13

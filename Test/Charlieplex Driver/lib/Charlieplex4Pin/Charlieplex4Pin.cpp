@@ -195,7 +195,7 @@ void Charlieplex4PinBlink::event() {
 
     if (this->fast_blink_resume_time_ms <= current_time) {
         fast_blink_update();
-        this->fast_blink_resume_time_ms = current_time = this->fast_blink_period_ms;
+        this->fast_blink_resume_time_ms = current_time + this->fast_blink_period_ms;
     }
 
     //  Calling parent's method to update the lower level charlieplex function
