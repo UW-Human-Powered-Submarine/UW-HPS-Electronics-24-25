@@ -5,15 +5,48 @@
 //  +---------------------------------------------------------------------------------------------+
 
 void setup() {
-    
+    Serial.begin(9600);
+
+    imu.set_refresh_period_ms(200);
+    imu.begin();
+
+    pitch_reading.set_refresh_period_ms(200);
+    pitch_reading.register_imu(&imu);
+
+    pressure_sensor.begin();
+
+    hud.set_fast_blink_period_ms(250);  //  2Hz
+    hud.set_slow_blink_period_ms(500);  //  1Hz
 }
 
 void loop() {
+    hud.update();
+
+    if (GET_STATE(MAIN_LOOP) == ML_Active) {
+        imu.update();
+        pitch_reading.update();
+        pressure_sensor.update();
+    }
+
     blink_update();
+    main_loop_update();
 }
 
+//  +------------------------------- Background Services -------------------------------+
 
-//  +--------------------------Blinking Builtin LED, Status LED-------------------------+
+//  +------------------------------------ Main Loop ------------------------------------+
+
+void main_loop_update() {
+    SETUP_FSM(MAIN_LOOP)
+
+    STATE(ML_Initialization) {
+        Serial.println("Hello");
+        SLEEP(1000);
+    }
+}
+
+//  +------------------------- Blinking Builtin LED, Status LED ------------------------+
+
 void blink_update() {
     SETUP_FSM(BLINK);
 
