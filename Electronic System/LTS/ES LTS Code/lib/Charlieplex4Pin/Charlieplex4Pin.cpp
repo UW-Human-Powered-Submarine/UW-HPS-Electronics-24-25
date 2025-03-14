@@ -11,7 +11,7 @@ Charlieplex4Pin::Charlieplex4Pin(int pin0, int pin1, int pin2, int pin3)
 Charlieplex4Pin::Charlieplex4Pin(
     int pin0, int pin1, int pin2, int pin3, unsigned long refresh_period_microsecond
 )   : Scheduler(refresh_period_microsecond)
-    , led_on_delay_us(800) {
+    , led_on_delay_us(700) {
 
     this->pin_array[0] = pin0;
     this->pin_array[1] = pin1;
