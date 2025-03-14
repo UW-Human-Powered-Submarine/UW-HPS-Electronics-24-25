@@ -47,7 +47,7 @@ const int CHARLIEPLEX_LED_RED[5] = {5, 4, 0, 1, 2};
 class Charlieplex4Pin: public Scheduler {
 public:
     Charlieplex4Pin(int pin0, int pin1, int pin2, int pin3);
-    Charlieplex4Pin(int pin0, int pin1, int pin2, int pin3, int refresh_period_microsecond);
+    Charlieplex4Pin(int pin0, int pin1, int pin2, int pin3, unsigned long refresh_period_microsecond);
     ~Charlieplex4Pin();
 
     void set_led_on_delay(unsigned long microsecond);

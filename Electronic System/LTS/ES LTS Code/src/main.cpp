@@ -18,9 +18,10 @@ void setup() {
     pitch_reading.set_refresh_period_ms(200);
     pitch_reading.register_imu(&imu);
 
+    pressure_sensor.set_refresh_period_ms(200);
     pressure_sensor.begin();
 
-    hud.set_fast_blink_period_ms(250);  //  2Hz
+    hud.set_fast_blink_period_ms(100);  //  5Hz
     hud.set_slow_blink_period_ms(500);  //  1Hz
 }
 
@@ -30,7 +31,7 @@ void loop() {
     if (GET_STATE(MAIN_LOOP) == ML_Active) {
         imu.update();
         pitch_reading.update();
-        pressure_sensor.update();
+        // pressure_sensor.update();
     }
 
     main_loop_update();
@@ -38,6 +39,7 @@ void loop() {
     pitch_and_depth_display_update();
 
     blink_update();
+    logging_update();
 }
 //  +------------------------------------- EEPROM --------------------------------------+
 
@@ -114,7 +116,6 @@ void main_loop_update()
         if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 2000) {
             pitch_reading.calibrate_gravity(vec_cali.get_sample_average());
             pressure_sensor.calibrate_depth_zero(depth_cali.get_sample_average());
-
             TO(ML_GPVC_Finished);
         }
 
@@ -124,6 +125,7 @@ void main_loop_update()
 
         vec_cali.add_sample(imu.get_acceleration_vec());
         depth_cali.add_sample(pressure_sensor.get_depth_m());
+        Serial.println(pressure_sensor.get_depth_m());
 
         SLEEP(200);
     }
@@ -193,13 +195,13 @@ void main_loop_update()
         }
     }
 
-    STATE(ML_GPVC_1) {
+    STATE(ML_GPVC_2) {
         if (!BTN_CBGV) TO(ML_Active);
 
         if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 2000) TO(ML_GPVC_Start);
     }
 
-    STATE(ML_PVC_1) {
+    STATE(ML_PVC_2) {
         if (!BTN_CBPCH) TO(ML_Active);
 
         if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 2000) TO(ML_PVC_Start);
@@ -209,7 +211,7 @@ void main_loop_update()
         if (!BTN_SAVE) TO(ML_Active);
 
         if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 5000) {
-            // save calibration ot EEPROM
+            //  Save calibration ot EEPROM
             Vector3D gravity_vec = pitch_reading.get_gravity_calibration();
             Vector3D pitch_vec = pitch_reading.get_pitch_direction_calibration();
             float depth = pressure_sensor.get_depth_calibration();
@@ -228,8 +230,16 @@ void main_loop_update()
 
             save_calibration_to_eeprom(calibration);
 
+            //  Save the version number to EEPROM
+
+            EEPROM.put(ADDR_EEPROM_VERSION, EEPROM_VERSION);
+
             TO(ML_SaveC_Finished);
         }
+    }
+
+    STATE(ML_SaveC_Finished) {
+        if (!BTN_SAVE) TO(ML_Active);
     }
 
 }
@@ -275,7 +285,7 @@ void main_display_interface_update() {
             case ML_PVC_1:
             case ML_PVC_2:
             case ML_SaveC:
-                hud.set_green_led(2, CBS_ON);
+                hud.set_green_led(1, CBS_ON);
                 break;
 
             case ML_Initialization:
@@ -334,8 +344,8 @@ void pitch_and_depth_display_update() {
         //  pitch
         for (int i0 = 0; i0 < PITCH_DISPLAY_CONFIG_COUNT; i0++) {
             if (
-                PITCH_DISPLAY_CONFIG[i0].lower_range <= pressure_sensor.get_depth_m() 
-                && pressure_sensor.get_depth_m() <= PITCH_DISPLAY_CONFIG[i0].upper_range
+                PITCH_DISPLAY_CONFIG[i0].lower_range <= pitch_reading.get_pitch_deg()
+                && pitch_reading.get_pitch_deg() <= PITCH_DISPLAY_CONFIG[i0].upper_range
             ) {
                 for (int i1 = 0; i1 < 5; i1++) {
                     hud.set_yellow_led(i1, PITCH_DISPLAY_CONFIG[i0].display[i1]);
@@ -360,6 +370,7 @@ void blink_update() {
 
     STATE(1) {
         digitalWrite(PIN_LED_BUILTIN, HIGH);
+        
         if (GET_STATE(MAIN_LOOP) == ML_Active) {
             SLEEP_TO_NEXT(DELAY_ACTIVE_LED_BUILTIN);
         } else {
@@ -377,6 +388,27 @@ void blink_update() {
     }
 }
 
+//  
+
+void logging_update() {
+    SETUP_FSM_FUNCTION(LOGGING)
+
+    STATE(0) {
+        // init
+        if (GET_STATE(MAIN_LOOP) == ML_Active) TO_NEXT;
+    }
+
+    STATE(1) {
+        if (GET_STATE(MAIN_LOOP) != ML_Active) TO(0);
+        Serial.print(GET_STATE(MAIN_LOOP));
+        Serial.print(" -p ");
+        Serial.print(pitch_reading.get_pitch_deg());
+        Serial.print("; -d ");
+        Serial.print(pressure_sensor.get_depth_m());
+        Serial.println();
+        SLEEP(1000);
+    }
+}
 
 #elif defined(SYSTEM_TEST)
 //  +---------------------------------------------------------------------------------------------+

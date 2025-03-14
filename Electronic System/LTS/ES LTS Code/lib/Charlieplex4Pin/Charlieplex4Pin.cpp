@@ -5,13 +5,13 @@
 //  +-------------------------------------------------------------------------+
 
 Charlieplex4Pin::Charlieplex4Pin(int pin0, int pin1, int pin2, int pin3)
-    : Charlieplex4Pin(pin0, pin1, pin2, pin3, 2000) {
+    : Charlieplex4Pin(pin0, pin1, pin2, pin3, 10000) {
 }
 
 Charlieplex4Pin::Charlieplex4Pin(
-    int pin0, int pin1, int pin2, int pin3, int refresh_period_microsecond
+    int pin0, int pin1, int pin2, int pin3, unsigned long refresh_period_microsecond
 )   : Scheduler(refresh_period_microsecond)
-    , led_on_delay_us(1000) {
+    , led_on_delay_us(800) {
 
     this->pin_array[0] = pin0;
     this->pin_array[1] = pin1;
@@ -21,6 +21,8 @@ Charlieplex4Pin::Charlieplex4Pin(
     for (int i1 = 0; i1 < 12; i1++) {
         this->led_states[i1] = false;
     }
+
+    this->enable_accurate_mode();
 }
 
 Charlieplex4Pin::~Charlieplex4Pin() {
@@ -99,7 +101,7 @@ void Charlieplex4Pin::event() {
         if (led_states[i]) {
             this->led_on_permutation(i);
             delayMicroseconds(this->led_on_delay_us);
-        }
+        } 
     }
 
     //  turn off all pins, prevent from inconsistent brightness

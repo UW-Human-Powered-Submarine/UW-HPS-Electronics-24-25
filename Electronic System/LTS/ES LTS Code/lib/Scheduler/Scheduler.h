@@ -40,9 +40,18 @@ public:
     void set_refresh_period(unsigned long microsecond);
     void set_refresh_period_ms(unsigned long millisecond);
 
+    //  Enable accurate_mode, so the event counter is set based on the 
+    //      previous time stamp, instead of the current time. This will cause 
+    //      series issue if the tasks are saturated. 
+    void enable_accurate_mode();
+
+    void disable_accurate_mode();
+
 private:
     unsigned long refresh_period_us;
     unsigned long prev_timestamp_us;
+
+    bool accurate_mode;
 
     virtual void event() = 0;
 };

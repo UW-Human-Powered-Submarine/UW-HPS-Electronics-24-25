@@ -1,7 +1,8 @@
 #include "Scheduler.h"
 
 Scheduler::Scheduler(unsigned long refresh_period_us)
-    : refresh_period_us(refresh_period_us), prev_timestamp_us(0) {
+    : refresh_period_us(refresh_period_us), prev_timestamp_us(0)
+    , accurate_mode(false) {
 }
 
 Scheduler::~Scheduler() {
@@ -13,8 +14,14 @@ void Scheduler::update() {
         (this->prev_timestamp_us + this->refresh_period_us <= curr_time) 
         || (curr_time < this->prev_timestamp_us)   //  detect micros() overflow
     ) {
-        // Serial.println(curr_time);
-        this->prev_timestamp_us = curr_time;    //  record the new timestamp
+        if (this->accurate_mode) {
+            //  increment based on the previous time stamp
+            this->prev_timestamp_us += this->refresh_period_us;
+        } else {
+            //  increment based on the current time stamp
+            this->prev_timestamp_us = curr_time;    
+        }
+        
 
         this->event();
     }
@@ -31,9 +38,17 @@ void Scheduler::refresh_no_timer_reset() {
 
 void Scheduler::set_refresh_period(unsigned long microsecond)
 {
-    this->prev_timestamp_us = microsecond;
+    this->refresh_period_us = microsecond;
 }
 
 void Scheduler::set_refresh_period_ms(unsigned long millisecond) {
-    this->prev_timestamp_us = millisecond * 1000;
+    this->refresh_period_us = millisecond * 1000;
+}
+
+void Scheduler::enable_accurate_mode() {
+    this->accurate_mode = true;
+}
+
+void Scheduler::disable_accurate_mode() {
+    this->accurate_mode = false;
 }

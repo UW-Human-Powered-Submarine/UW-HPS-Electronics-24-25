@@ -132,7 +132,7 @@ const DisplayConfigItem PITCH_DISPLAY_CONFIG[PITCH_DISPLAY_CONFIG_COUNT] = {
     {-20.,      -10.,       {CBS_OFF, CBS_OFF,        CBS_ON, CBS_ON,         CBS_OFF}},
     {-10.,      10.,        {CBS_OFF, CBS_OFF,        CBS_ON, CBS_OFF,        CBS_OFF}},
     {10.,       20.,        {CBS_OFF, CBS_ON,         CBS_ON, CBS_OFF,        CBS_OFF}}, 
-    {20.,       30.,        {CBS_OFF, CBS_BLINK_FAST, CBS_ON, CBS_OFF,        CBS_OFF}},
+    {20.,       30.,        {CBS_OFF, CBS_BLINK_SLOW, CBS_ON, CBS_OFF,        CBS_OFF}},
     {30.,       40.,        {CBS_OFF, CBS_BLINK_FAST, CBS_ON, CBS_OFF,        CBS_OFF}},
     {40.,       INFINITY,   {CBS_ON,  CBS_ON,         CBS_ON, CBS_OFF,        CBS_OFF}}
 };
@@ -146,7 +146,10 @@ const DisplayConfigItem PITCH_DISPLAY_CONFIG[PITCH_DISPLAY_CONFIG_COUNT] = {
 CREATE_FSM(BLINK, 0)
 void blink_update();
 
+//  +------------------------------------- Logging -------------------------------------+
 
+CREATE_FSM(LOGGING, 0)
+void logging_update();
 
 #elif defined(SYSTEM_TEST)
 //  +---------------------------------------------------------------------------------------------+
