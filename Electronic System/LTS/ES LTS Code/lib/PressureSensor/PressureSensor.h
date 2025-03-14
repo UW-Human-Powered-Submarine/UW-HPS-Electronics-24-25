@@ -54,6 +54,7 @@ class PressureSensor: public Scheduler {
         float get_pressure_mbar() const;
         float get_depth_m() const;
         float get_temperature_c() const;
+        float get_depth_calibration() const;
     
         void calibrate_depth_zero(float zero_depth_m);
         void calibrate_depth_zero_using_current_reading();

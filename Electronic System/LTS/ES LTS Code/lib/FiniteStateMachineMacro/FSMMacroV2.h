@@ -25,7 +25,7 @@ unsigned long FSM_ ## fsm_name ## _resume_time = 0;
 
 #define RESET_FSM(fsm_name) { FSM_ ## fsm_name ## _state = FSM_ ## fsm_name ## _init_state; }
 
-#define SETUP_FSM(fsm_name) \
+#define SETUP_FSM_FUNCTION(fsm_name) \
 if (millis() < FSM_ ## fsm_name ## _resume_time) { return; } \
 FSM_STATE_VARIABLE_TYPE __current_state = FSM_ ## fsm_name ## _state; \
 FSM_STATE_VARIABLE_TYPE *__global_state = &FSM_ ## fsm_name ## _state;  \
