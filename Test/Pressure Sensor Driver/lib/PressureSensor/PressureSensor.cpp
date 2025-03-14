@@ -36,6 +36,9 @@ float PressureSensor::get_temperature_c() const {
     return temperature_C;
 }
 
+float PressureSensor::get_depth_calibration() const {
+    return this->depth_zero_calibration;
+}
 
 void PressureSensor::calibrate_depth_zero(float zero_depth_m) {
     this->depth_zero_calibration = zero_depth_m;
