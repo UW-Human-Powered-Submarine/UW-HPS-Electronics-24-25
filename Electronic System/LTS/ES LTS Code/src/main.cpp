@@ -35,6 +35,7 @@ void loop() {
 
     main_loop_update();
     main_display_interface_update();
+    pitch_and_depth_display_update();
 
     blink_update();
 }
@@ -299,6 +300,50 @@ void main_display_interface_update() {
                 break;
         }
         
+        SLEEP(200);
+    }
+}
+
+//  +----------------------------- Pitch and Depth Display -----------------------------+
+
+void pitch_and_depth_display_update() {
+    SETUP_FSM_FUNCTION(PITCH_DEPTH_DISPLAY)
+
+    STATE(0) {
+        if (GET_STATE(MAIN_LOOP) == ML_Active) TO(1);
+
+        SLEEP(200);
+    }
+
+    STATE(1) {
+        if (GET_STATE(MAIN_LOOP) != ML_Active) TO(0);
+        
+        //  depth
+        for (int i0 = 0; i0 < DEPTH_DISPLAY_CONFIG_COUNT; i0++) {
+            if (
+                DEPTH_DISPLAY_CONFIG[i0].lower_range <= pressure_sensor.get_depth_m() 
+                && pressure_sensor.get_depth_m() <= DEPTH_DISPLAY_CONFIG[i0].upper_range
+            ) {
+                for (int i1 = 0; i1 < 5; i1++) {
+                    hud.set_red_led(i1, DEPTH_DISPLAY_CONFIG[i0].display[i1]);
+                }
+                break;
+            }
+        }
+
+        //  pitch
+        for (int i0 = 0; i0 < PITCH_DISPLAY_CONFIG_COUNT; i0++) {
+            if (
+                PITCH_DISPLAY_CONFIG[i0].lower_range <= pressure_sensor.get_depth_m() 
+                && pressure_sensor.get_depth_m() <= PITCH_DISPLAY_CONFIG[i0].upper_range
+            ) {
+                for (int i1 = 0; i1 < 5; i1++) {
+                    hud.set_yellow_led(i1, PITCH_DISPLAY_CONFIG[i0].display[i1]);
+                }
+                break;
+            }
+        }
+
         SLEEP(200);
     }
 }

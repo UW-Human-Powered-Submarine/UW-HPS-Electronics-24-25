@@ -101,6 +101,41 @@ AverageSampling<float> depth_cali;
 CREATE_FSM(MAIN_DISPLAY_INTERFACE, 0)
 void main_display_interface_update();
 
+//  +----------------------------- Pitch and Depth Display -----------------------------+
+
+CREATE_FSM(PITCH_DEPTH_DISPLAY, 0)
+void pitch_and_depth_display_update();
+
+struct DisplayConfigItem {
+    float lower_range; 
+    float upper_range;
+
+    CharlieplexBlinkStates display[5]; 
+};
+
+//  display configurations
+
+#define DEPTH_DISPLAY_CONFIG_COUNT 5
+const DisplayConfigItem DEPTH_DISPLAY_CONFIG[DEPTH_DISPLAY_CONFIG_COUNT] = {
+    {-INFINITY, -4.,        {CBS_OFF, CBS_OFF, CBS_ON,  CBS_ON,  CBS_ON}},
+    {-4.,       -3.,        {CBS_OFF, CBS_OFF, CBS_OFF, CBS_ON,  CBS_OFF}},
+    {-3.,       -2.,        {CBS_OFF, CBS_OFF, CBS_ON,  CBS_OFF, CBS_OFF}},
+    {-2.,       -1.,        {CBS_OFF, CBS_ON,  CBS_OFF, CBS_OFF, CBS_OFF}},
+    {-1.,       INFINITY,   {CBS_ON,  CBS_ON,  CBS_ON,  CBS_OFF, CBS_OFF}}
+};
+
+#define PITCH_DISPLAY_CONFIG_COUNT 9
+const DisplayConfigItem PITCH_DISPLAY_CONFIG[PITCH_DISPLAY_CONFIG_COUNT] = {
+    {-INFINITY, -40.,       {CBS_OFF, CBS_OFF,        CBS_ON, CBS_ON,         CBS_ON}},
+    {-40.,      -30.,       {CBS_OFF, CBS_OFF,        CBS_ON, CBS_BLINK_FAST, CBS_OFF}},
+    {-30.,      -20.,       {CBS_OFF, CBS_OFF,        CBS_ON, CBS_BLINK_SLOW, CBS_OFF}},
+    {-20.,      -10.,       {CBS_OFF, CBS_OFF,        CBS_ON, CBS_ON,         CBS_OFF}},
+    {-10.,      10.,        {CBS_OFF, CBS_OFF,        CBS_ON, CBS_OFF,        CBS_OFF}},
+    {10.,       20.,        {CBS_OFF, CBS_ON,         CBS_ON, CBS_OFF,        CBS_OFF}}, 
+    {20.,       30.,        {CBS_OFF, CBS_BLINK_FAST, CBS_ON, CBS_OFF,        CBS_OFF}},
+    {30.,       40.,        {CBS_OFF, CBS_BLINK_FAST, CBS_ON, CBS_OFF,        CBS_OFF}},
+    {40.,       INFINITY,   {CBS_ON,  CBS_ON,         CBS_ON, CBS_OFF,        CBS_OFF}}
+};
 
 //  +------------------------- Blinking Builtin LED, Status LED ------------------------+
 #define PIN_LED_BUILTIN 13
