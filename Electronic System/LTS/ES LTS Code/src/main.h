@@ -19,6 +19,7 @@
 
 #include "IMU.h"
 #include "PitchReading.h"
+#include "MS5837_FSM.h"
 #include "PressureSensor.h"
 #include "Charlieplex4Pin.h"
 
@@ -32,7 +33,7 @@
 //  Change this if saved data is incompatible with current program
 const unsigned char EEPROM_VERSION = 0;
 
-#define ADDR_EEPROM_VERSION 42
+#define ADDR_EEPROM_VERSION 43
 #define ADDR_CALIBRATIONS (ADDR_EEPROM_VERSION + sizeof(EEPROM_VERSION))
 
 //  The Structure of calibration data in EEPROM
@@ -72,6 +73,7 @@ void save_calibration_to_eeprom(const SavedCalibration & calibrations);
 IMU imu;
 PitchReading pitch_reading;
 
+MS5837_FSM ms5873;
 PressureSensor pressure_sensor;
 
 #define PINS_CHARLIEPLEX_HUD 2, 3, 4, 5
@@ -117,11 +119,11 @@ struct DisplayConfigItem {
 
 #define DEPTH_DISPLAY_CONFIG_COUNT 5
 const DisplayConfigItem DEPTH_DISPLAY_CONFIG[DEPTH_DISPLAY_CONFIG_COUNT] = {
-    {-INFINITY, -4.,        {CBS_OFF, CBS_OFF, CBS_ON,  CBS_ON,  CBS_ON}},
-    {-4.,       -3.,        {CBS_OFF, CBS_OFF, CBS_OFF, CBS_ON,  CBS_OFF}},
-    {-3.,       -2.,        {CBS_OFF, CBS_OFF, CBS_ON,  CBS_OFF, CBS_OFF}},
-    {-2.,       -1.,        {CBS_OFF, CBS_ON,  CBS_OFF, CBS_OFF, CBS_OFF}},
-    {-1.,       INFINITY,   {CBS_ON,  CBS_ON,  CBS_ON,  CBS_OFF, CBS_OFF}}
+    {4.,        INFINITY,    {CBS_OFF, CBS_OFF, CBS_ON,  CBS_ON,  CBS_ON}},
+    {3.,        4.,          {CBS_OFF, CBS_OFF, CBS_OFF, CBS_ON,  CBS_OFF}},
+    {2.,        3.,          {CBS_OFF, CBS_OFF, CBS_ON,  CBS_OFF, CBS_OFF}},
+    {1.,        2.,          {CBS_OFF, CBS_ON,  CBS_OFF, CBS_OFF, CBS_OFF}},
+    {-INFINITY, 1.,          {CBS_ON,  CBS_ON,  CBS_ON,  CBS_OFF, CBS_OFF}}
 };
 
 #define PITCH_DISPLAY_CONFIG_COUNT 9

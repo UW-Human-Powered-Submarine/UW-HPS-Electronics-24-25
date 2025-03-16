@@ -37,7 +37,7 @@
 #include "Arduino.h"
 #include "Wire.h"
 #include "Scheduler.h"
-#include "MS5837.h"
+#include "MS5837_FSM.h"
 
 #define DENSITY_FRESH_WATER_KGPM 997
 #define DENSITY_SEA_WATER_KGPM 1029
@@ -47,9 +47,8 @@ class PressureSensor: public Scheduler {
         PressureSensor();
         PressureSensor(unsigned long refresh_period_ms);
         ~PressureSensor(); 
-    
-        //  initialize PressureSensor, start the communication
-        void begin();
+
+        void register_ms5873(MS5837_FSM *ms5873);
 
         float get_pressure_mbar() const;
         float get_depth_m() const;
@@ -64,8 +63,7 @@ class PressureSensor: public Scheduler {
         void fluid_density(float density_kgpm3);
 
     private:
-        MS5837 sensor;
-        bool initialized;
+        MS5837_FSM *sensor;
         bool is_depth_calibrated;
         float depth_zero_calibration;
 

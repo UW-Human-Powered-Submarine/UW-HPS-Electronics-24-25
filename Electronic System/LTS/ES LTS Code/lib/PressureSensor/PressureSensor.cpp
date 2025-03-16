@@ -6,22 +6,15 @@ PressureSensor::PressureSensor()
 
 PressureSensor::PressureSensor(unsigned long refresh_period_ms) 
     : Scheduler(refresh_period_ms)
-    , sensor(), initialized(false), is_depth_calibrated(false), depth_zero_calibration(0.0f)
+    , sensor(nullptr), is_depth_calibrated(false), depth_zero_calibration(0.0f)
     , pressure_mbar(0.0f), depth_m(0.0f), temperature_C(0.0f) {
 }
 
 PressureSensor::~PressureSensor() {
 }
 
-void PressureSensor::begin() {
-    Wire.begin();
-
-    this->sensor.setModel(MS5837::MS5837_02BA);
-    this->sensor.init();
-    
-    this->sensor.setFluidDensity(DENSITY_FRESH_WATER_KGPM);
-
-    this->initialized = true;
+void PressureSensor::register_ms5873(MS5837_FSM *ms5873) {
+    this->sensor = ms5873;
 }
 
 float PressureSensor::get_pressure_mbar() const {
@@ -46,26 +39,26 @@ void PressureSensor::calibrate_depth_zero(float zero_depth_m) {
 }
 
 void PressureSensor::calibrate_depth_zero_using_current_reading() {
-    if (!this->initialized) {
-        Serial.println("Pressure Sensor is not initialized. Use PresureSensor.begin() first.");
+    if (this->sensor == nullptr) {
+        Serial.println("Pressure Sensor is not registered. Use PresureSensor.register_imu() first.");
         return;
     }
-    this->sensor.read();
-    this->depth_zero_calibration = sensor.depth();
+
+    this->depth_zero_calibration = this->sensor->depth();
 
     this->is_depth_calibrated = true;
 }
 
 void PressureSensor::in_fresh_water() {
-    this->sensor.setFluidDensity(DENSITY_FRESH_WATER_KGPM);
+    this->sensor->setFluidDensity(DENSITY_FRESH_WATER_KGPM);
 }
 
 void PressureSensor::in_sea_water() {
-    this->sensor.setFluidDensity(DENSITY_SEA_WATER_KGPM);
+    this->sensor->setFluidDensity(DENSITY_SEA_WATER_KGPM);
 }
 
 void PressureSensor::fluid_density(float density_kgpm3) {
-    this->sensor.setFluidDensity(density_kgpm3);
+    this->sensor->setFluidDensity(density_kgpm3);
 }
 
 void PressureSensor::event() {
@@ -73,8 +66,8 @@ void PressureSensor::event() {
 }
 
 void PressureSensor::pull_sensor_data() {
-    if (!this->initialized) {
-        Serial.println("Pressure Sensor is not initialized. Use PresureSensor.begin() first.");
+    if (this->sensor == nullptr) {
+        Serial.println("Pressure Sensor is not registered. Use PresureSensor.register_imu() first.");
         return;
     }
     if (!this->is_depth_calibrated) {
@@ -82,9 +75,9 @@ void PressureSensor::pull_sensor_data() {
         return;
     }
 
-    this->sensor.read();
+    // this->sensor->read();
 
-    this->pressure_mbar = this->sensor.pressure(); 
-    this->temperature_C = this->sensor.temperature(); 
-    this->depth_m = this->sensor.depth() - this->depth_zero_calibration; 
+    this->pressure_mbar = this->sensor->pressure(); 
+    this->temperature_C = this->sensor->temperature(); 
+    this->depth_m = this->sensor->depth() - this->depth_zero_calibration; 
 }

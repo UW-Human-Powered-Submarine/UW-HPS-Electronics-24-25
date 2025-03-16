@@ -6,6 +6,7 @@
 
 void setup() {
     Serial.begin(9600);
+    Wire.begin();
 
     //  initialize input buttons
     pinMode(PIN_BTN_CBGV,  INPUT_PULLUP);
@@ -18,8 +19,13 @@ void setup() {
     pitch_reading.set_refresh_period_ms(200);
     pitch_reading.register_imu(&imu);
 
+    ms5873.set_refresh_period_ms(200);
+    ms5873.setModel(MS5837::MS5837_02BA);
+    ms5873.init();
+
     pressure_sensor.set_refresh_period_ms(200);
-    pressure_sensor.begin();
+    pressure_sensor.register_ms5873(&ms5873);
+    pressure_sensor.in_fresh_water();
 
     hud.set_fast_blink_period_ms(100);  //  5Hz
     hud.set_slow_blink_period_ms(500);  //  1Hz
@@ -31,7 +37,14 @@ void loop() {
     if (GET_STATE(MAIN_LOOP) == ML_Active) {
         imu.update();
         pitch_reading.update();
-        // pressure_sensor.update();
+        ms5873.update();
+        pressure_sensor.update();
+    } else if (
+        GET_STATE(MAIN_LOOP) == ML_PVC_Reading 
+        || GET_STATE(MAIN_LOOP) == ML_GPVC_Reading
+    ) {
+        imu.update();
+        ms5873.update();
     }
 
     main_loop_update();
@@ -65,8 +78,7 @@ void save_calibration_to_eeprom(const SavedCalibration & calibrations) {
 
 //  +------------------------------------ Main Loop ------------------------------------+
 
-void main_loop_update()
-{
+void main_loop_update() {
     SETUP_FSM_FUNCTION(MAIN_LOOP)
 
     STATE(ML_Initialization) {
@@ -107,7 +119,7 @@ void main_loop_update()
 
         vec_cali.clear();
         depth_cali.clear();
-        pressure_sensor.calibrate_depth_zero(0);    //  temporarily set pressure to absolute zero
+        // pressure_sensor.calibrate_depth_zero(0);    //  temporarily set pressure to absolute zero
 
         TO(ML_GPVC_Reading);
     }
@@ -120,12 +132,12 @@ void main_loop_update()
         }
 
         //  refresh imu and pressure sensor
-        imu.refresh_no_timer_reset();
-        pressure_sensor.refresh_no_timer_reset();
+        // imu.refresh_no_timer_reset();
+        // pressure_sensor.refresh_no_timer_reset();
 
         vec_cali.add_sample(imu.get_acceleration_vec());
-        depth_cali.add_sample(pressure_sensor.get_depth_m());
-        Serial.println(pressure_sensor.get_depth_m());
+        depth_cali.add_sample(ms5873.depth());
+        // Serial.println(pressure_sensor.get_depth_m());
 
         SLEEP(200);
     }
@@ -171,7 +183,6 @@ void main_loop_update()
         }
 
         //  refresh imu
-        imu.refresh_no_timer_reset();
         vec_cali.add_sample(imu.get_acceleration_vec());
         SLEEP(200);
     }
