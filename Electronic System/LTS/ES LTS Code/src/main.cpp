@@ -33,19 +33,14 @@ void setup() {
 
 void loop() {
     hud.update();
+    
+    imu.update();
+    ms5873.update();
 
     if (GET_STATE(MAIN_LOOP) == ML_Active) {
-        imu.update();
         pitch_reading.update();
-        ms5873.update();
         pressure_sensor.update();
-    } else if (
-        GET_STATE(MAIN_LOOP) == ML_PVC_Reading 
-        || GET_STATE(MAIN_LOOP) == ML_GPVC_Reading
-    ) {
-        imu.update();
-        ms5873.update();
-    }
+    } 
 
     main_loop_update();
     main_display_interface_update();
@@ -69,6 +64,9 @@ SavedCalibration retrieve_calibration_from_eeprom() {
 }
 
 void save_calibration_to_eeprom(const SavedCalibration & calibrations) {
+    //  Save the version number to EEPROM
+    EEPROM.put(ADDR_EEPROM_VERSION, EEPROM_VERSION);
+    
     EEPROM.put(ADDR_CALIBRATIONS, calibrations);
 }
 
@@ -119,7 +117,6 @@ void main_loop_update() {
 
         vec_cali.clear();
         depth_cali.clear();
-        // pressure_sensor.calibrate_depth_zero(0);    //  temporarily set pressure to absolute zero
 
         TO(ML_GPVC_Reading);
     }
@@ -131,13 +128,8 @@ void main_loop_update() {
             TO(ML_GPVC_Finished);
         }
 
-        //  refresh imu and pressure sensor
-        // imu.refresh_no_timer_reset();
-        // pressure_sensor.refresh_no_timer_reset();
-
         vec_cali.add_sample(imu.get_acceleration_vec());
         depth_cali.add_sample(ms5873.depth());
-        // Serial.println(pressure_sensor.get_depth_m());
 
         SLEEP(200);
     }
@@ -182,8 +174,8 @@ void main_loop_update() {
             TO(ML_PVC_Finished);
         }
 
-        //  refresh imu
         vec_cali.add_sample(imu.get_acceleration_vec());
+
         SLEEP(200);
     }
 
@@ -240,10 +232,6 @@ void main_loop_update() {
             calibration.depth_zero = depth;
 
             save_calibration_to_eeprom(calibration);
-
-            //  Save the version number to EEPROM
-
-            EEPROM.put(ADDR_EEPROM_VERSION, EEPROM_VERSION);
 
             TO(ML_SaveC_Finished);
         }
@@ -399,7 +387,7 @@ void blink_update() {
     }
 }
 
-//  
+//  +------------------------------------- Logging -------------------------------------+
 
 void logging_update() {
     SETUP_FSM_FUNCTION(LOGGING)
@@ -411,12 +399,14 @@ void logging_update() {
 
     STATE(1) {
         if (GET_STATE(MAIN_LOOP) != ML_Active) TO(0);
+
         Serial.print(GET_STATE(MAIN_LOOP));
         Serial.print(" -p ");
         Serial.print(pitch_reading.get_pitch_deg());
         Serial.print("; -d ");
         Serial.print(pressure_sensor.get_depth_m());
         Serial.println();
+
         SLEEP(1000);
     }
 }

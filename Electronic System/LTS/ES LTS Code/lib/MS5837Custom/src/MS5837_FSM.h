@@ -7,6 +7,8 @@
 #include "MS5837.h"
 #include "FSMMacroV2.h"
 
+//  implement MS5837::read() method in fsm
+
 class MS5837_FSM: public MS5837, public SchedulerFSM {
 public:
     MS5837_FSM();
