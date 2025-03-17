@@ -20,7 +20,7 @@
 #include "IMU.h"
 #include "PitchReading.h"
 #include "MS5837_FSM.h"
-#include "PressureSensor.h"
+#include "DepthReading.h"
 #include "Charlieplex4Pin.h"
 
 #include "AverageSampling.h"
@@ -74,7 +74,7 @@ IMU imu;
 PitchReading pitch_reading;
 
 MS5837_FSM ms5873;
-PressureSensor pressure_sensor;
+DepthReading depth_reading;
 
 #define PINS_CHARLIEPLEX_HUD 2, 3, 4, 5
 Charlieplex4PinBlink hud(PINS_CHARLIEPLEX_HUD);

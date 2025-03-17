@@ -9,12 +9,12 @@
 //  |                                                                         |
 //  |   The pressure sensor is Bar02 from BlueRobotics.                       |
 //  |                                                                         |
-//  |   PressureSensor must be initialized before use by                      |
-//  |       PressureSensor.begin()                                            |
-//  |   PressureSensor values are buffered in the internal field, calling     |
-//  |       PressureSensor.refresh() to pull data from PressureSensor and     |
+//  |   DepthReading must be initialized before use by                      |
+//  |       DepthReading.begin()                                            |
+//  |   DepthReading values are buffered in the internal field, calling     |
+//  |       DepthReading.refresh() to pull data from DepthReading and     |
 //  |       update the field                                                  |
-//  |   Calling PressureSensor.update() at high frequency will automatically  |
+//  |   Calling DepthReading.update() at high frequency will automatically  |
 //  |       update internal field at set interval.                            |
 //  |                                                                         |
 //  |   Pinout:                                                               |
@@ -42,11 +42,11 @@
 #define DENSITY_FRESH_WATER_KGPM 997
 #define DENSITY_SEA_WATER_KGPM 1029
 
-class PressureSensor: public Scheduler {
+class DepthReading: public Scheduler {
     public:
-        PressureSensor();
-        PressureSensor(unsigned long refresh_period_ms);
-        ~PressureSensor(); 
+        DepthReading();
+        DepthReading(unsigned long refresh_period_ms);
+        ~DepthReading(); 
 
         void register_ms5873(MS5837_FSM *ms5873);
 

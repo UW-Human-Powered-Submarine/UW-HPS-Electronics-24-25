@@ -2,7 +2,6 @@
 #define ___MS5837_FSM_H___
 
 #include "Arduino.h"
-#include <Wire.h>
 #include "Scheduler.h"
 #include "MS5837.h"
 #include "FSMMacroV2.h"

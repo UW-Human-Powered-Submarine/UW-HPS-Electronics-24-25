@@ -6,6 +6,9 @@ Arduino library for the MS5837 pressure sensor. The MS5837 is a tiny SMT pressur
 
 This library also supports the MS5837-02BA which has a much smaller measurement range and is better suited for altitude measurement in air.
 
+## MS5873_FSM
+`MS5873_FSM` is compatible with FSM style programming. The event and scheduler bypassed the 40ms delay for the `MS5873.read()` method (it is still available in `MS5873_FSM` class), but required to call `MS5873_FSM.update()` repeatedly and highest frequency.
+
 # Documentation
 
 Please see the examples for normal operation. Below are the available functions used in the library.
@@ -58,9 +61,20 @@ float altitude();
 
 ```
 
+``` cpp
+MS5837_FSM();
+
+/** call MS5837.read() method in stages. See SchedulerFSM for other FSM and Scheduler related methods.
+ */
+void update();
+
+```
+
 # Versions
 
 1.0.0 - First release, included in Arduino Library Manager
+
+Custom - Added `MS5873_FSM` class to be compatible with FSM style programming. 
 
 # Reference
 
