@@ -1,8 +1,13 @@
-# BlueRobotics MS5837 Library ![Test](https://github.com/bluerobotics/BlueRobotics_MS5837_Library/workflows/Test/badge.svg)
+# BlueRobotics MS5837 Library 
+
+(**NOTE:** This class have converted to FSM compatible version, for Human powered submarine at Unviersity of Washington.)
 
 Arduino library for the MS5837 pressure sensor. The MS5837 is a tiny SMT pressures sensor from Measurement Specialties that can measure pressure of up to 30 Bar (300m depth) with resolution of 0.2 mbar.
 
 This library also supports the MS5837-02BA which has a much smaller measurement range and is better suited for altitude measurement in air.
+
+## MS5873_FSM
+`MS5873_FSM` is compatible with FSM style programming. The event and scheduler bypassed the 40ms delay for the `MS5873.read()` method (it is still available in `MS5873_FSM` class), but required to call `MS5873_FSM.update()` repeatedly and highest frequency.
 
 # Documentation
 
@@ -56,9 +61,20 @@ float altitude();
 
 ```
 
+``` cpp
+MS5837_FSM();
+
+/** call MS5837.read() method in stages. See SchedulerFSM for other FSM and Scheduler related methods.
+ */
+void update();
+
+```
+
 # Versions
 
 1.0.0 - First release, included in Arduino Library Manager
+
+Custom - Added `MS5873_FSM` class to be compatible with FSM style programming. 
 
 # Reference
 

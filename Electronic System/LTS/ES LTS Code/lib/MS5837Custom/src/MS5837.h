@@ -87,7 +87,7 @@ public:
 	 */
 	float altitude();
 
-private:
+protected:
 
 	//This stores the requested i2c port
 	TwoWire * _i2cPort;
@@ -107,5 +107,8 @@ private:
 
 	uint8_t crc4(uint16_t n_prom[]);
 };
+
+
+
 
 #endif
