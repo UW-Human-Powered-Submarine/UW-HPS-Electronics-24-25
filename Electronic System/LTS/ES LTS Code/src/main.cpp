@@ -6,6 +6,7 @@
 
 void setup() {
     Serial.begin(9600);
+    Wire.begin();
 
     //  initialize input buttons
     pinMode(PIN_BTN_CBGV,  INPUT_PULLUP);
@@ -18,8 +19,13 @@ void setup() {
     pitch_reading.set_refresh_period_ms(200);
     pitch_reading.register_imu(&imu);
 
-    pressure_sensor.set_refresh_period_ms(200);
-    pressure_sensor.begin();
+    ms5873.set_refresh_period_ms(200);
+    ms5873.setModel(MS5837::MS5837_02BA);
+    ms5873.init();
+
+    depth_reading.set_refresh_period_ms(200);
+    depth_reading.register_ms5873(&ms5873);
+    depth_reading.in_fresh_water();
 
     hud.set_fast_blink_period_ms(100);  //  5Hz
     hud.set_slow_blink_period_ms(500);  //  1Hz
@@ -27,12 +33,14 @@ void setup() {
 
 void loop() {
     hud.update();
+    
+    imu.update();
+    ms5873.update();
 
     if (GET_STATE(MAIN_LOOP) == ML_Active) {
-        imu.update();
         pitch_reading.update();
-        // pressure_sensor.update();
-    }
+        depth_reading.update();
+    } 
 
     main_loop_update();
     main_display_interface_update();
@@ -56,6 +64,9 @@ SavedCalibration retrieve_calibration_from_eeprom() {
 }
 
 void save_calibration_to_eeprom(const SavedCalibration & calibrations) {
+    //  Save the version number to EEPROM
+    EEPROM.put(ADDR_EEPROM_VERSION, EEPROM_VERSION);
+
     EEPROM.put(ADDR_CALIBRATIONS, calibrations);
 }
 
@@ -65,8 +76,7 @@ void save_calibration_to_eeprom(const SavedCalibration & calibrations) {
 
 //  +------------------------------------ Main Loop ------------------------------------+
 
-void main_loop_update()
-{
+void main_loop_update() {
     SETUP_FSM_FUNCTION(MAIN_LOOP)
 
     STATE(ML_Initialization) {
@@ -80,7 +90,7 @@ void main_loop_update()
             pitch_reading.calibrate_pitch_direction(Vector3D(
                 calibration.x_pitch, calibration.y_pitch, calibration.z_pitch
             ));
-            pressure_sensor.calibrate_depth_zero(calibration.depth_zero);
+            depth_reading.calibrate_depth_zero(calibration.depth_zero);
 
             TO(ML_Active);
         }
@@ -107,7 +117,6 @@ void main_loop_update()
 
         vec_cali.clear();
         depth_cali.clear();
-        pressure_sensor.calibrate_depth_zero(0);    //  temporarily set pressure to absolute zero
 
         TO(ML_GPVC_Reading);
     }
@@ -115,17 +124,12 @@ void main_loop_update()
     STATE(ML_GPVC_Reading) {
         if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 2000) {
             pitch_reading.calibrate_gravity(vec_cali.get_sample_average());
-            pressure_sensor.calibrate_depth_zero(depth_cali.get_sample_average());
+            depth_reading.calibrate_depth_zero(depth_cali.get_sample_average());
             TO(ML_GPVC_Finished);
         }
 
-        //  refresh imu and pressure sensor
-        imu.refresh_no_timer_reset();
-        pressure_sensor.refresh_no_timer_reset();
-
         vec_cali.add_sample(imu.get_acceleration_vec());
-        depth_cali.add_sample(pressure_sensor.get_depth_m());
-        Serial.println(pressure_sensor.get_depth_m());
+        depth_cali.add_sample(ms5873.depth());
 
         SLEEP(200);
     }
@@ -170,9 +174,8 @@ void main_loop_update()
             TO(ML_PVC_Finished);
         }
 
-        //  refresh imu
-        imu.refresh_no_timer_reset();
         vec_cali.add_sample(imu.get_acceleration_vec());
+
         SLEEP(200);
     }
 
@@ -214,7 +217,7 @@ void main_loop_update()
             //  Save calibration ot EEPROM
             Vector3D gravity_vec = pitch_reading.get_gravity_calibration();
             Vector3D pitch_vec = pitch_reading.get_pitch_direction_calibration();
-            float depth = pressure_sensor.get_depth_calibration();
+            float depth = depth_reading.get_depth_calibration();
 
             SavedCalibration calibration;
 
@@ -229,10 +232,6 @@ void main_loop_update()
             calibration.depth_zero = depth;
 
             save_calibration_to_eeprom(calibration);
-
-            //  Save the version number to EEPROM
-
-            EEPROM.put(ADDR_EEPROM_VERSION, EEPROM_VERSION);
 
             TO(ML_SaveC_Finished);
         }
@@ -326,13 +325,21 @@ void pitch_and_depth_display_update() {
     }
 
     STATE(1) {
-        if (GET_STATE(MAIN_LOOP) != ML_Active) TO(0);
+        if (GET_STATE(MAIN_LOOP) != ML_Active) {
+            //  reset all light
+            for (int i = 0; i < 5; i++) {
+                hud.set_red_led(i, CBS_OFF);
+                hud.set_yellow_led(i, CBS_OFF);
+            }
+
+            TO(0);
+        }
         
         //  depth
         for (int i0 = 0; i0 < DEPTH_DISPLAY_CONFIG_COUNT; i0++) {
             if (
-                DEPTH_DISPLAY_CONFIG[i0].lower_range <= pressure_sensor.get_depth_m() 
-                && pressure_sensor.get_depth_m() <= DEPTH_DISPLAY_CONFIG[i0].upper_range
+                DEPTH_DISPLAY_CONFIG[i0].lower_range <= depth_reading.get_depth_m() 
+                && depth_reading.get_depth_m() <= DEPTH_DISPLAY_CONFIG[i0].upper_range
             ) {
                 for (int i1 = 0; i1 < 5; i1++) {
                     hud.set_red_led(i1, DEPTH_DISPLAY_CONFIG[i0].display[i1]);
@@ -388,7 +395,7 @@ void blink_update() {
     }
 }
 
-//  
+//  +------------------------------------- Logging -------------------------------------+
 
 void logging_update() {
     SETUP_FSM_FUNCTION(LOGGING)
@@ -400,12 +407,14 @@ void logging_update() {
 
     STATE(1) {
         if (GET_STATE(MAIN_LOOP) != ML_Active) TO(0);
+
         Serial.print(GET_STATE(MAIN_LOOP));
         Serial.print(" -p ");
         Serial.print(pitch_reading.get_pitch_deg());
         Serial.print("; -d ");
-        Serial.print(pressure_sensor.get_depth_m());
+        Serial.print(depth_reading.get_depth_m());
         Serial.println();
+
         SLEEP(1000);
     }
 }
