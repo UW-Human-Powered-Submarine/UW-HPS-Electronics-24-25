@@ -30,10 +30,3 @@ void AverageSampling<T>::clear() {
     this->sample_average = T();
     this->sample_size = 0;
 }
-
-// Explicit template instantiation
-template class AverageSampling<int>;
-template class AverageSampling<long>;
-template class AverageSampling<float>;
-template class AverageSampling<double>;
-template class AverageSampling<Vector3D>;
