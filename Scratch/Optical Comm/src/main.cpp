@@ -10,12 +10,11 @@ void setup() {
 }
 
 void loop() {
-    Serial.print("CLK:");
-    Serial.print(analogRead(PIN_CLK));
-    Serial.print(", D:");
-    Serial.print(analogRead(PIN_RX));
-    Serial.println();
-    delay(200);
+    opt_rx.update();
+    if (opt_rx.is_avaliable()) {
+        Serial.print("Data Received: ");
+        Serial.println(opt_rx.read_data());
+    }
 }
 
 
@@ -27,6 +26,7 @@ void loop() {
 
 void setup() {
     Serial.begin(9600);
+    counter = 0;
 }
 
 void loop() {
@@ -42,8 +42,10 @@ void data_feeder_update() {
     }
 
     STATE(1) {
-        opt_tx.sent_data(11);
-        SLEEP(15000);
+        opt_tx.sent_data(counter++);
+        opt_tx.sent_data(counter++);
+        opt_tx.sent_data(counter++);
+        SLEEP(5000);
     }
 }
 

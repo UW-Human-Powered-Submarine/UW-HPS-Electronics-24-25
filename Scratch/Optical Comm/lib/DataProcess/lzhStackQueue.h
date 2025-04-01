@@ -23,7 +23,7 @@ public:
     bool is_full() const;
 
     T get_item(int index) const;
-private:
+protected:
     T *const arr;
     const int item_max_size; 
     int item_size; 
