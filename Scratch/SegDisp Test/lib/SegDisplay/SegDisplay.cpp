@@ -32,21 +32,20 @@ void SegDisplay::event() {
     if (this->require_refresh) {
         //  display pitch then depth
 
-        char display_string[6];
+        char display_string[7];
 
-        display_string[0] = (int)(this->depth * 10) % 10 + 48;
-        display_string[1] = (int)this->depth % 10 + 48;
-        display_string[2] = ' ';
+        display_string[0] = (this->pitch < 0)? '-' : ' ';
+        display_string[1] = (int)(abs(this->pitch) / 10) % 10 + 48;
+        display_string[2] = (int)abs(this->pitch) % 10 + 48;
+        
+        display_string[3] = ' ';
+        display_string[4] = (int)this->depth % 10 + 48;
+        display_string[5] = (int)(this->depth * 10) % 10 + 48;
 
-        display_string[3] = (int)abs(this->pitch) % 10;
-        display_string[4] = (int)(abs(this->pitch) / 10) % 10;
-        display_string[5] = (this->pitch < 0)? '-' : ' ';
+        display_string[6] = '\0';
 
-        for (int i = 0; i < 5; i++) {
-            Serial.print(display_string[i]);
-        }
-
-        display.showString(display_string);
+        //  0b00001000 is the bit mask for the dot placement
+        display.showString(display_string, 6U, 0U, 0b00001000);
 
         this->require_refresh = false;
     }
