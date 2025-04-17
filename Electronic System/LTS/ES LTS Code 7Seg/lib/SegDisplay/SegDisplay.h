@@ -18,12 +18,13 @@ public:
 private:
     TM1637TinyDisplay6 display;
 
+    bool should_refresh; 
+
     float depth; 
     float pitch;
 
-    bool require_refresh;
-
     void event();
+    void refresh();
 };
 
 #endif  //  ___SEG_DISPLAY_H___

@@ -25,16 +25,21 @@
 
 #include "AverageSampling.h"
 
-//  +------------------------------------- PINOUT --------------------------------------+
+//  +-------------------------------------- PINS ---------------------------------------+
 
-#define PIN_BTN_CBGV  8
-#define PIN_BTN_CBPCH 9
-#define PIN_BTN_SAVE  10
+#define PIN_BTN_CBGV    2
+#define PIN_BTN_CBPCH   3
+#define PIN_BTN_SAVE    4
 
+#define PIN_LED_CBGV    5
+#define PIN_LED_CBPCH   6
+#define PIN_LED_SAVE    7
 #define PIN_LED_BUILTIN 13
 
-#define PIN_7SEG_CLK 2
-#define PIN_7SEG_DIO 3
+#define PIN_7SEG_CLK    9
+#define PIN_7SEG_DIO    8
+
+#define PIN_BAT_VOLTAGE A0
 
 //  +------------------------------------- EEPROM --------------------------------------+
 
