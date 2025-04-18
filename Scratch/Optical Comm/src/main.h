@@ -1,8 +1,8 @@
 #ifndef ___MAIN_H___
 #define ___MAIN_H___
 
-#define COMM_RX
-// #define COMM_TX
+// #define COMM_RX
+#define COMM_TX
 // #define QUEUE_TEST
 
 #if defined(COMM_RX)
@@ -18,7 +18,7 @@
 #define PIN_CLK A2
 #define PIN_RX  A3
 
-OptRX opt_rx(PIN_RX, PIN_CLK, 100, 5);
+OptRX opt_rx(PIN_RX, PIN_CLK, 150, 5);
 
 
 #elif defined(COMM_TX)
@@ -34,7 +34,7 @@ OptRX opt_rx(PIN_RX, PIN_CLK, 100, 5);
 #define PIN_CLK 9
 #define PIN_TX  10
 
-OptTX opt_tx(PIN_TX, PIN_CLK, 100, 5, 4);
+OptTX opt_tx(PIN_TX, PIN_CLK, 150, 5, 2);
 
 CREATE_FSM(DataFeeder, 0);
 void data_feeder_update();

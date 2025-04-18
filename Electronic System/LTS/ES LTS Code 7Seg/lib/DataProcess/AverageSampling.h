@@ -19,5 +19,5 @@ private:
     int sample_size;
 };
 
+#include "AverageSampling.inl"
 #endif // __AVERAGE_SAMPLING_H__
-
