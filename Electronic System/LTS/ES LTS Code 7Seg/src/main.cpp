@@ -29,6 +29,12 @@ void setup() {
 
     segmented_display.set_refresh_period_ms(200);
     segmented_display.begin();
+    text_scroll_counter = 0;
+
+    led_builtin.begin();
+    led_gravity_calibration.begin();
+    led_pitch_calibration.begin();
+    led_epprom_save.begin();
 }
 
 void loop() {
@@ -41,8 +47,14 @@ void loop() {
         depth_reading.update();
     } 
 
+    led_builtin.update();
+    led_gravity_calibration.update();
+    led_pitch_calibration.update();
+    led_epprom_save.update();
+
     main_loop_update();
     hud_interface_update();
+    status_led_update();
 
     blink_update();
     logging_update();
@@ -66,6 +78,11 @@ void save_calibration_to_eeprom(const SavedCalibration & calibrations) {
     EEPROM.put(ADDR_EEPROM_VERSION, EEPROM_VERSION);
 
     EEPROM.put(ADDR_CALIBRATIONS, calibrations);
+}
+
+void erase_eeprom() {
+    //  Change EEPROM version number, then the saved calibration is invalidated.
+    EEPROM.put(ADDR_EEPROM_VERSION, EEPROM_VERSION + 1);   
 }
 
 //  +---------------------------------- Input Buttons ----------------------------------+
@@ -211,6 +228,11 @@ void main_loop_update() {
     STATE(ML_SaveC) {
         if (!BTN_SAVE) TO(ML_Active);
 
+        if (BTN_CBGV || BTN_CBPCH) {
+            TS_REFRESH(MAIN_LOOP_TIMER);
+            TO(ML_EraseC);
+        }
+
         if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 5000) {
             //  Save calibration ot EEPROM
             Vector3D gravity_vec = pitch_reading.get_gravity_calibration();
@@ -239,51 +261,347 @@ void main_loop_update() {
         if (!BTN_SAVE) TO(ML_Active);
     }
 
+    STATE(ML_EraseC) {
+        if (!(BTN_CBGV || BTN_CBPCH)) {
+            TS_REFRESH(MAIN_LOOP_TIMER);
+            TO(ML_SaveC);
+        }
+
+        if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 5000) {
+            erase_eeprom();
+            TO(ML_EraseC_Finished);
+        }
+    }
+
+    STATE(ML_EraseC_Finished) {
+        if (!(BTN_CBGV || BTN_CBPCH)) TO(ML_Idle_0);
+    }
 }
 //  +---------------------------------- HUD Interface ----------------------------------+
 
 void hud_interface_update() {
     SETUP_FSM_FUNCTION(HUD_INTERFACE_UPDATE);
 
-    STATE(0) {
-        if (GET_STATE(MAIN_LOOP) == ML_Active) {
-            segmented_display.set_depth(depth_reading.get_depth_m());
-            segmented_display.set_pitch(pitch_reading.get_pitch_deg());
-            SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    STATE(HIU_Welcome) {
+        switch (text_scroll_counter / HUD_DISPLAY_TEXT_DELAY_MULTIPLIER) {
+            case 0:
+            case 1: segmented_display.set_static_text("UW HPS");      break;
+            case 2: 
+            case 3: segmented_display.set_static_text("E-SYS ");      break;
+            case 4: 
+            case 5: segmented_display.set_static_text("2025  ");      break;
+            case 6: 
+            case 7: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
+
+            default:
+                text_scroll_counter = 0;
+                TO(HIU_HUB_Reset);
+                break;
         }
+        
+        text_scroll_counter++;
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_HUB) {
+        switch (GET_STATE(MAIN_LOOP)) {
+            case ML_Active: 
+                TO(HIU_Sensor_Info); 
+                break;
+
+            case ML_Idle_0: 
+                TO(HIU_Idle_0); 
+                break;
+
+            case ML_GPVC_0: 
+            case ML_GPVC_1: 
+            case ML_GPVC_2: 
+                TO(HIU_GPVC); 
+                break;
+
+            case ML_Idle_1: 
+                TO(HIU_Idle_1); 
+                break;
+
+            case ML_PVC_1: 
+            case ML_PVC_2: 
+                TO(HIU_PVC); 
+                break;
+
+            case ML_GPVC_Start: 
+            case ML_GPVC_Reading: 
+            case ML_PVC_Start: 
+            case ML_PVC_Reading: 
+                TO(HIU_Reading); 
+                break;
+
+            case ML_GPVC_Finished:
+            case ML_PVC_Finished:
+            case ML_SaveC_Finished:
+            case ML_EraseC_Finished:
+                TO(HIU_Finish); 
+                break;
+
+            case ML_SaveC: 
+                TO(HIU_Save); 
+                break;
+
+            case ML_EraseC: 
+                TO(HIU_Erase); 
+                break;
+            
+            default:
+                break;
+        }
+    }
+
+    STATE(HIU_HUB_Reset) {
+        segmented_display.set_static_text(HUD_EMPTY_MSG);
+        segmented_display.set_static_text_blink_mode(SDBS_ON);
+        text_scroll_counter = 0;
+        TO(HIU_HUB);
+    }
+
+    STATE(HIU_Sensor_Info) {
+        if (GET_STATE(MAIN_LOOP) != ML_Active) TO(HIU_HUB_Reset);
+
+        segmented_display.set_depth(depth_reading.get_depth_m());
+        for (int i = 0; i < DEPTH_DISPLAY_CONFIG_COUNT; i++) {
+            if (
+                (DEPTH_DISPLAY_CONFIG[i].lower_range <= depth_reading.get_depth_m()) 
+                && (depth_reading.get_depth_m() <= DEPTH_DISPLAY_CONFIG[i].upper_range)
+            ) {
+                segmented_display.set_depth_blink_mode(DEPTH_DISPLAY_CONFIG[i].status);
+                break;
+            }
+        }
+
+        segmented_display.set_pitch(pitch_reading.get_pitch_deg());
+        for (int i = 0; i < PITCH_DISPLAY_CONFIG_COUNT; i++) {
+            if (
+                (PITCH_DISPLAY_CONFIG[i].lower_range <= pitch_reading.get_pitch_deg()) 
+                && (pitch_reading.get_pitch_deg() <= PITCH_DISPLAY_CONFIG[i].upper_range)
+            ) {
+                segmented_display.set_pitch_blink_mode(PITCH_DISPLAY_CONFIG[i].status);
+                break;
+            }
+        }
+
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_Idle_0) {
+        if (GET_STATE(MAIN_LOOP) != ML_Idle_0) TO(HIU_HUB_Reset);
+        
+        switch (text_scroll_counter / HUD_DISPLAY_TEXT_DELAY_MULTIPLIER) {
+            case 0: segmented_display.set_static_text(" ZERO ");      break;
+            case 1: segmented_display.set_static_text("  AT  ");      break;
+            case 2: segmented_display.set_static_text("NEUTRL");      break;
+            case 3: segmented_display.set_static_text("  AT  ");      break;
+            case 4: segmented_display.set_static_text("SURFCE");      break;
+            case 5: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
+
+            default:
+                text_scroll_counter = 0;
+                break;
+        }
+        
+        text_scroll_counter++;
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_GPVC) {
+        if (
+            GET_STATE(MAIN_LOOP) != ML_GPVC_0
+            && GET_STATE(MAIN_LOOP) != ML_GPVC_1
+            && GET_STATE(MAIN_LOOP) != ML_GPVC_2
+        ) TO(HIU_HUB_Reset);
+        
+        segmented_display.set_static_text("ZERO 1"); 
+
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_Idle_1) {
+        if (GET_STATE(MAIN_LOOP) != ML_Idle_1) TO(HIU_HUB_Reset);
+        
+        switch (text_scroll_counter / HUD_DISPLAY_TEXT_DELAY_MULTIPLIER) {
+            case 0: segmented_display.set_static_text(" ZERO ");      break;
+            case 1: segmented_display.set_static_text("  AT  ");      break;
+            case 2: segmented_display.set_static_text("APPROX");      break;
+            case 3: segmented_display.set_static_text("30 DEG");      break;
+            case 4: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
+
+            default:
+                text_scroll_counter = 0;
+                break;
+        }
+        
+        text_scroll_counter++;
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_PVC) {
+        if (
+            GET_STATE(MAIN_LOOP) != ML_PVC_1
+            && GET_STATE(MAIN_LOOP) != ML_PVC_2
+        ) TO(HIU_HUB_Reset);
+        
+        segmented_display.set_static_text("ZERO 2"); 
+
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_Reading) {
+        if (
+            GET_STATE(MAIN_LOOP) != ML_GPVC_Start
+            && GET_STATE(MAIN_LOOP) != ML_GPVC_Reading
+            && GET_STATE(MAIN_LOOP) != ML_PVC_Start
+            && GET_STATE(MAIN_LOOP) != ML_PVC_Reading
+        ) TO(HIU_HUB_Reset);
+        
+        segmented_display.set_static_text(" HOLD "); 
+
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_Finish) {
+        if (
+            GET_STATE(MAIN_LOOP) != ML_GPVC_Finished
+            && GET_STATE(MAIN_LOOP) != ML_PVC_Finished
+            && GET_STATE(MAIN_LOOP) != ML_SaveC_Finished
+            && GET_STATE(MAIN_LOOP) != ML_EraseC_Finished
+        ) TO(HIU_HUB_Reset);
+        
+        segmented_display.set_static_text("FINISH"); 
+
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_Save) {
+        if (GET_STATE(MAIN_LOOP) != ML_SaveC) TO(HIU_HUB_Reset);
+        
+        segmented_display.set_static_text(" SAUE "); 
+
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_Erase) {
+        if (GET_STATE(MAIN_LOOP) != ML_EraseC) TO(HIU_HUB_Reset);
+        
+        segmented_display.set_static_text("ERASE "); 
+        
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
     }
 }
 
+//  +------------------------------------ Status LED -----------------------------------+
 
-//  +------------------------- Blinking Builtin LED, Status LED ------------------------+
+void status_led_update() {
+    SETUP_FSM_FUNCTION(STATUS_LED);
+
+    STATE(0) TO_NEXT;
+
+    STATE(1) {
+        switch (GET_STATE(MAIN_LOOP)) {
+            case ML_Idle_0:
+                led_gravity_calibration.blink(DELAY_STATUS_LED_SLOW_BLINK);
+                led_pitch_calibration.off();
+                led_epprom_save.off();
+                break;
+    
+            case ML_GPVC_0:
+            case ML_GPVC_1:
+            case ML_GPVC_2:
+            case ML_GPVC_Finished:
+                led_gravity_calibration.on();
+                led_pitch_calibration.off();
+                led_epprom_save.off();
+                break;
+    
+            case ML_GPVC_Start:
+            case ML_GPVC_Reading:
+                led_gravity_calibration.blink(DELAY_STATUS_LED_FAST_BLINK);
+                led_pitch_calibration.off();
+                led_epprom_save.off();
+                break;
+    
+            case ML_Idle_1:
+                led_gravity_calibration.off();
+                led_pitch_calibration.blink(DELAY_STATUS_LED_SLOW_BLINK);
+                led_epprom_save.off();
+                break;
+    
+            case ML_PVC_1:
+            case ML_PVC_2:
+            case ML_PVC_Finished:
+                led_gravity_calibration.off();
+                led_pitch_calibration.on();
+                led_epprom_save.off();
+                break;
+    
+            case ML_PVC_Start:
+            case ML_PVC_Reading:
+                led_gravity_calibration.off();
+                led_pitch_calibration.blink(DELAY_STATUS_LED_FAST_BLINK);
+                led_epprom_save.off();
+                break;
+
+            case ML_SaveC:
+                led_gravity_calibration.off();
+                led_pitch_calibration.off();
+                led_epprom_save.on();
+                break;
+
+            case ML_EraseC:
+                led_gravity_calibration.blink(DELAY_STATUS_LED_FAST_BLINK);
+                led_pitch_calibration.blink(DELAY_STATUS_LED_FAST_BLINK);
+                led_epprom_save.on();
+                break;
+
+            case ML_EraseC_Finished:
+                led_gravity_calibration.on();
+                led_pitch_calibration.on();
+                led_epprom_save.on();
+                break;
+            
+            default:
+                led_gravity_calibration.off();
+                led_pitch_calibration.off();
+                led_epprom_save.off();
+                break;
+        }
+
+        SLEEP(100);
+    }
+}
+
+//  +-------------------------------- Blinking Builtin LED -----------------------------+
 
 void blink_update()
 {
     SETUP_FSM_FUNCTION(BLINK);
 
     STATE(0) {
-        pinMode(PIN_LED_BUILTIN, OUTPUT);
-        TO_NEXT;
+        //  hub
+        if (GET_STATE(MAIN_LOOP) == ML_Active) {
+            led_builtin.blink(DELAY_ACTIVE_LED_BUILTIN);
+            TO(1);
+        }
+
+        SLEEP(100);
     }
 
     STATE(1) {
-        digitalWrite(PIN_LED_BUILTIN, HIGH);
-        
-        if (GET_STATE(MAIN_LOOP) == ML_Active) {
-            SLEEP_TO_NEXT(DELAY_ACTIVE_LED_BUILTIN);
-        } else {
-            SLEEP_TO_NEXT(DELAY_IDLE_LED_BUILTIN);
-        }   
+        //  when main is at Active
+        if (GET_STATE(MAIN_LOOP) != ML_Active) {
+            led_builtin.blink(DELAY_IDLE_LED_BUILTIN);
+            TO(0);
+        }
+
+        SLEEP(100);
     }
 
-    STATE(2) {
-        digitalWrite(PIN_LED_BUILTIN, LOW);
-        if (GET_STATE(MAIN_LOOP) == ML_Active) {
-            SLEEP_TO(DELAY_ACTIVE_LED_BUILTIN, 1);
-        } else {
-            SLEEP_TO(DELAY_IDLE_LED_BUILTIN, 1);
-        }   
-    }
 }
 
 //  +------------------------------------- Logging -------------------------------------+

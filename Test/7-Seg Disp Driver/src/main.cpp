@@ -15,9 +15,7 @@ float depth = 0;
 void setup() {
     Serial.begin(9600);
     seg.begin();
-    seg.set_depth_blink_mode(SDBS_BLINK_FAST);
-    seg.set_pitch_blink_mode(SDBS_BLINK_SLOW);
-    seg.set_static_text_blink_mode(SDBS_BLINK_SLOW);
+    // seg.set_static_text_blink_mode(SDBS_BLINK_SLOW);
 }
 
 void loop() {
@@ -29,7 +27,7 @@ void loop() {
 
         // update_time += 1000;
 
-        seg.set_static_text("BAT...");
+        seg.set_static_text("NEUTRL");
     }
     seg.update();
     delay(1);

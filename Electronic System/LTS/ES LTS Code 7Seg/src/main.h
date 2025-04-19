@@ -22,6 +22,7 @@
 #include "MS5837_FSM.h"
 #include "DepthReading.h"
 #include "SegDisplay.h"
+#include "LEDControl.h"
 
 #include "AverageSampling.h"
 
@@ -47,9 +48,9 @@
 //  If EEPROM_VERSION matched to saved version, then the calibration data will be used,
 //      otherwise, new calibration is required
 //  Change this if saved data is incompatible with current program
-const unsigned char EEPROM_VERSION = 0;
+const unsigned char EEPROM_VERSION = 42;
 
-#define ADDR_EEPROM_VERSION 43
+#define ADDR_EEPROM_VERSION 0
 #define ADDR_CALIBRATIONS (ADDR_EEPROM_VERSION + sizeof(EEPROM_VERSION))
 
 //  The Structure of calibration data in EEPROM
@@ -70,6 +71,7 @@ bool is_eeprom_version_matched();
 
 SavedCalibration retrieve_calibration_from_eeprom();
 void save_calibration_to_eeprom(const SavedCalibration & calibrations);
+void erase_eeprom();
 
 
 //  +---------------------------------- Input Buttons ----------------------------------+
@@ -90,14 +92,19 @@ DepthReading depth_reading;
 
 SegDisplay segmented_display(PIN_7SEG_CLK, PIN_7SEG_DIO);
 
+LEDControl led_builtin(PIN_LED_BUILTIN);
+LEDControl led_gravity_calibration(PIN_LED_CBGV);
+LEDControl led_pitch_calibration(PIN_LED_CBPCH);
+LEDControl led_epprom_save(PIN_LED_SAVE);
+
 //  +------------------------------------ Main Loop ------------------------------------+
 
 enum MAIN_LOOP_FSM_STATES {
     ML_Initialization,
     ML_Idle_0, ML_GPVC_0, ML_GPVC_Start, ML_GPVC_Reading, ML_GPVC_Finished,  //  GVPC: Gravity Vec Pressure Calibrate
     ML_Idle_1, ML_GPVC_1, ML_PVC_1, ML_PVC_Start, ML_PVC_Reading, ML_PVC_Finished,  //  PVC: Pitch Vec Calibrate
-    ML_GPVC_2, ML_PVC_2, ML_SaveC, ML_SaveC_Finished,   //  SaveC: Save_Calibration
-    ML_Active
+    ML_GPVC_2, ML_PVC_2, ML_SaveC, ML_SaveC_Finished, ML_EraseC, ML_EraseC_Finished,   //  SaveC: Save_Calibration
+    ML_Active                                                                          //  EraseC: Erase Calibration
 };
 CREATE_FSM(MAIN_LOOP, ML_Initialization);
 void main_loop_update();
@@ -110,15 +117,63 @@ AverageSampling<float> depth_cali;
 
 //  +---------------------------------- HUD Interface ----------------------------------+
 
-#define HUD_DISPLAY_REFRESH_PERIOD 200;
+#define HUD_DISPLAY_REFRESH_PERIOD 100
+#define HUD_DISPLAY_TEXT_DELAY 1000
 
-CREATE_FSM(HUD_INTERFACE_UPDATE, 0)
+#define HUD_DISPLAY_TEXT_DELAY_MULTIPLIER (HUD_DISPLAY_TEXT_DELAY / HUD_DISPLAY_REFRESH_PERIOD)
+
+const char HUD_EMPTY_MSG[7] = "      ";
+
+struct SegDisplayConfigItem {
+    float lower_range; 
+    float upper_range;
+
+    SegDisplayBlinkState status; 
+};
+
+#define DEPTH_DISPLAY_CONFIG_COUNT 5
+const SegDisplayConfigItem DEPTH_DISPLAY_CONFIG[DEPTH_DISPLAY_CONFIG_COUNT] = {
+    {-INFINITY, 1.,       SDBS_BLINK_FAST},
+    {1.,        2.,       SDBS_BLINK_SLOW},
+    {2.,        3.,       SDBS_ON},
+    {3.,        4.,       SDBS_BLINK_SLOW},
+    {4.,        INFINITY, SDBS_BLINK_FAST}
+};
+
+#define PITCH_DISPLAY_CONFIG_COUNT 5
+const SegDisplayConfigItem PITCH_DISPLAY_CONFIG[PITCH_DISPLAY_CONFIG_COUNT] = {
+    {-INFINITY, -45.,     SDBS_BLINK_FAST},
+    {-45.,      -20.,     SDBS_BLINK_SLOW},
+    {-20.,      20.,      SDBS_ON},
+    {20.,       45.,      SDBS_BLINK_SLOW},
+    {45.,       INFINITY, SDBS_BLINK_FAST}
+};
+
+enum HUD_INTERFACE_UPDATE_FSM_STATES {
+    HIU_Welcome,
+    HIU_HUB, HIU_HUB_Reset, HIU_Sensor_Info, 
+    HIU_Idle_0, HIU_GPVC, 
+    HIU_Idle_1, HIU_PVC, 
+    HIU_Reading, HIU_Finish, HIU_Save, HIU_Erase
+};
+
+unsigned int text_scroll_counter;
+
+CREATE_FSM(HUD_INTERFACE_UPDATE, HIU_Welcome);
 void hud_interface_update();
 
-//  +------------------------- Blinking Builtin LED, Status LED ------------------------+
+//  +------------------------------------ Status LED -----------------------------------+
+
+#define DELAY_STATUS_LED_FAST_BLINK 200
+#define DELAY_STATUS_LED_SLOW_BLINK 1000
+
+CREATE_FSM(STATUS_LED, 0);
+void status_led_update();
+
+//  +-------------------------------- Blinking Builtin LED -----------------------------+
 
 #define DELAY_IDLE_LED_BUILTIN 1000
-#define DELAY_ACTIVE_LED_BUILTIN 250
+#define DELAY_ACTIVE_LED_BUILTIN 500
 
 CREATE_FSM(BLINK, 0)
 void blink_update();
