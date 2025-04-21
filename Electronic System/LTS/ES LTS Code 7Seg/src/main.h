@@ -131,21 +131,17 @@ struct SegDisplayConfigItem {
     SegDisplayBlinkState status; 
 };
 
-#define DEPTH_DISPLAY_CONFIG_COUNT 5
+#define DEPTH_DISPLAY_CONFIG_COUNT 3
 const SegDisplayConfigItem DEPTH_DISPLAY_CONFIG[DEPTH_DISPLAY_CONFIG_COUNT] = {
     {-INFINITY, 1.,       SDBS_BLINK_FAST},
-    {1.,        2.,       SDBS_BLINK_SLOW},
-    {2.,        3.,       SDBS_ON},
-    {3.,        4.,       SDBS_BLINK_SLOW},
+    {1.,        4.,       SDBS_ON},
     {4.,        INFINITY, SDBS_BLINK_FAST}
 };
 
-#define PITCH_DISPLAY_CONFIG_COUNT 5
+#define PITCH_DISPLAY_CONFIG_COUNT 3
 const SegDisplayConfigItem PITCH_DISPLAY_CONFIG[PITCH_DISPLAY_CONFIG_COUNT] = {
     {-INFINITY, -45.,     SDBS_BLINK_FAST},
-    {-45.,      -20.,     SDBS_BLINK_SLOW},
-    {-20.,      20.,      SDBS_ON},
-    {20.,       45.,      SDBS_BLINK_SLOW},
+    {-45.,      45.,      SDBS_ON},
     {45.,       INFINITY, SDBS_BLINK_FAST}
 };
 
