@@ -1,6 +1,6 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.0.4 Chrome/128.0.6613.186 Electron/32.2.5 Safari/537.36" version="26.0.4">
   <diagram name="Page-1" id="vc2-ugjVfAUITuuNlwr3">
-    <mxGraphModel dx="3475" dy="1116" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="1" shadow="0">
+    <mxGraphModel dx="3371" dy="1051" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="1" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -288,9 +288,6 @@
         </mxCell>
         <mxCell id="_yVc6Fe7BxlGdp1vEw1C-153" style="edgeStyle=orthogonalEdgeStyle;shape=connector;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;endArrow=classic;" parent="1" source="_yVc6Fe7BxlGdp1vEw1C-154" target="_yVc6Fe7BxlGdp1vEw1C-139" edge="1">
           <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="_yVc6Fe7BxlGdp1vEw1C-154" value="&lt;span style=&quot;text-wrap: nowrap;&quot;&gt;! BTN_CBGV&lt;/span&gt;" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;size=10;" parent="1" vertex="1">
-          <mxGeometry y="1580" width="100" height="20" as="geometry" />
         </mxCell>
         <mxCell id="SFSeNab7W9dIxpVcOpU7-227" style="edgeStyle=orthogonalEdgeStyle;shape=connector;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;endArrow=classic;" parent="1" source="_yVc6Fe7BxlGdp1vEw1C-160" target="SFSeNab7W9dIxpVcOpU7-220" edge="1">
           <mxGeometry relative="1" as="geometry" />
@@ -1999,7 +1996,7 @@
           <mxGeometry x="-760" y="1160.02" width="80" height="80" as="geometry" />
         </mxCell>
         <mxCell id="2Kr1pvU35sY8RzPCK9hG-39" value="7-Segmented Display Interface (Update Every 200ms)" style="shape=table;startSize=20;container=1;collapsible=0;childLayout=tableLayout;" parent="1" vertex="1">
-          <mxGeometry x="1200" y="740" width="480" height="380" as="geometry" />
+          <mxGeometry x="1080" y="2680" width="480" height="380" as="geometry" />
         </mxCell>
         <mxCell id="2Kr1pvU35sY8RzPCK9hG-40" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;strokeColor=inherit;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="2Kr1pvU35sY8RzPCK9hG-39" vertex="1">
           <mxGeometry y="20" width="480" height="40" as="geometry" />
@@ -2194,6 +2191,9 @@
         </mxCell>
         <mxCell id="G3eXuL04PWB7KV-HF8_N-21" value="Erase EEPROM" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;" vertex="1" parent="1">
           <mxGeometry x="800" y="1380" width="120" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="_yVc6Fe7BxlGdp1vEw1C-154" value="&lt;span style=&quot;text-wrap: nowrap;&quot;&gt;! BTN_CBGV&lt;/span&gt;" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;size=10;" parent="1" vertex="1">
+          <mxGeometry y="1580" width="100" height="20" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
