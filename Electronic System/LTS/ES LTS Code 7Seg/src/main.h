@@ -1,6 +1,8 @@
 #ifndef ___MAIN_H___
 #define ___MAIN_H___
 
+//  UW-HPS Electronics System LTS Ver. 2025
+
 //  Comment and Uncomment following lines to choose program fucntion
 #define ELECTRONIC_SYSTEM
 // #define SYSTEM_TEST
@@ -92,15 +94,25 @@ void erase_eeprom();
 #define PWR_CHARGING_THRESHOLD_B    50
 #define PWR_STANDBY_THRESHOLD_B     50
 
-unsigned int pwr_batt_volt_reading;
-unsigned int pwr_charging_reading;
-unsigned int pwr_standby_reading;
+#define PWR_UPDATE_PERIOD 200
 
-//  Smoothing factor, lower is smoothier (weight more on the current reading)
+unsigned int pwr_batt_volt_reading_raw;
+unsigned int pwr_charging_reading_raw;
+unsigned int pwr_standby_reading_raw;
+
+//  Smoothing factor, lower is smoothier (weight on the current reading)
 
 #define PWR_BATT_VOLT_SMOOTHING_FACTOR  0.1
-#define PWR_BATT_VOLT_SMOOTHING_FACTOR  0.1
-#define PWR_BATT_VOLT_SMOOTHING_FACTOR  0.1
+#define PWR_CHARGING_SMOOTHING_FACTOR   0.1
+#define PWR_STANDBY_SMOOTHING_FACTOR    0.1
+
+#define PWR_GET_BATTERY_VOLTAGE     (pwr_batt_volt_reading_raw * 5.0 / 1024)
+
+CREATE_FSM(POWER_SENSING_READING, 0)
+void power_sensing_reading_update();
+
+//  Require the decimal place 0b00100000
+void fetch_battery_voltage_to_string(char *str_out);
 
 //  +------------------------------- Background Services -------------------------------+
 
@@ -124,6 +136,7 @@ enum MAIN_LOOP_FSM_STATES {
     ML_Idle_0, ML_GPVC_0, ML_GPVC_Start, ML_GPVC_Reading, ML_GPVC_Finished,  //  GVPC: Gravity Vec Pressure Calibrate
     ML_Idle_1, ML_GPVC_1, ML_PVC_1, ML_PVC_Start, ML_PVC_Reading, ML_PVC_Finished,  //  PVC: Pitch Vec Calibrate
     ML_GPVC_2, ML_PVC_2, ML_SaveC, ML_SaveC_Finished, ML_EraseC, ML_EraseC_Finished,   //  SaveC: Save_Calibration
+    ML_Action_Menu, ML_Disp_Batt_Menu, ML_Disp_Batt,   
     ML_Active                                                                          //  EraseC: Erase Calibration
 };
 CREATE_FSM(MAIN_LOOP, ML_Initialization);
@@ -170,7 +183,8 @@ enum HUD_INTERFACE_UPDATE_FSM_STATES {
     HIU_HUB, HIU_HUB_Reset, HIU_Sensor_Info, 
     HIU_Idle_0, HIU_GPVC, 
     HIU_Idle_1, HIU_PVC, 
-    HIU_Reading, HIU_Finish, HIU_Save, HIU_Erase
+    HIU_Reading, HIU_Finish, HIU_Save, HIU_Erase, 
+    HIU_Action_Menu, HIU_Disp_Batt_Menu, HIU_Disp_batt
 };
 
 unsigned int text_scroll_counter;

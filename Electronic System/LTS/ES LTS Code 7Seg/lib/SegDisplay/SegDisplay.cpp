@@ -6,7 +6,7 @@ SegDisplay::SegDisplay(int pin_clk, int pin_dio)
     , fast_flash_state(true), fast_flash_rate_ms(200), fast_flash_next_update_time_ms(0)
     , slow_flash_state(true), slow_flash_rate_ms(500), slow_flash_next_update_time_ms(0)
     , is_display_static_text(false)
-    , static_text(), display_static_text(true), static_text_display_mode(SDBS_ON)
+    , static_text(), display_static_text(true), dot_placement(0),  static_text_display_mode(SDBS_ON)
     , depth(0), display_depth(true), depth_display_mode(SDBS_ON)
     , pitch(0), display_pitch(true), pitch_display_mode(SDBS_ON) {
 }
@@ -18,6 +18,17 @@ void SegDisplay::begin() {
 void SegDisplay::set_static_text(const char *static_text) {
     if (strlen(static_text) <= 7) {
         strcpy(this->static_text, static_text);
+        this->dot_placement = 0;
+
+        this->is_display_static_text = true;
+        this->should_refresh = true;
+    }
+}
+
+void SegDisplay::set_static_text(const char *static_text, unsigned char dot_placement) {
+    if (strlen(static_text) <= 7) {
+        strcpy(this->static_text, static_text);
+        this->dot_placement = dot_placement;
 
         this->is_display_static_text = true;
         this->should_refresh = true;
@@ -149,9 +160,9 @@ void SegDisplay::refresh() {
         if (this->is_display_static_text)  {
             //  display static text
             if (display_static_text) {
-                display.showString(this->static_text, 6U, 0U, 0b00000000);
+                display.showString(this->static_text, 6U, 0U, this->dot_placement);
             } else {
-                display.showString("      ", 6U, 0U, 0b00000000);
+                display.showString("      ", 6U, 0U, this->dot_placement);
             }
 
         } else {

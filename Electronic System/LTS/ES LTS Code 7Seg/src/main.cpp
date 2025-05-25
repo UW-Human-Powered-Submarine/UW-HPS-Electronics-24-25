@@ -13,11 +13,6 @@ void setup() {
     pinMode(PIN_BTN_CBPCH, INPUT_PULLUP);
     pinMode(PIN_BTN_SAVE,  INPUT_PULLUP);
 
-    //  initialize power sensing current
-    pwr_batt_volt_reading = analogRead(PIN_BAT_VOLTAGE);
-    pwr_charging_reading = analogRead(PIN_CHARGING);
-    pwr_standby_reading = analogRead(PIN_STANDBY);
-
     imu.set_refresh_period_ms(200);
     imu.begin();
 
@@ -51,6 +46,8 @@ void loop() {
         pitch_reading.update();
         depth_reading.update();
     } 
+
+    power_sensing_reading_update();
 
     led_builtin.update();
     led_gravity_calibration.update();
@@ -91,6 +88,45 @@ void erase_eeprom() {
 }
 
 //  +---------------------------------- Power Sensing ----------------------------------+
+
+void power_sensing_reading_update() {
+    SETUP_FSM_FUNCTION(POWER_SENSING_READING)
+
+    STATE(0) {
+        //  initialize power sensing current
+        pwr_batt_volt_reading_raw = analogRead(PIN_BAT_VOLTAGE);
+        pwr_charging_reading_raw = analogRead(PIN_CHARGING);
+        pwr_standby_reading_raw = analogRead(PIN_STANDBY);
+
+        TO(1)
+    }
+
+    STATE(1) {
+        //  update sensor
+        pwr_batt_volt_reading_raw = (1-PWR_BATT_VOLT_SMOOTHING_FACTOR) * pwr_batt_volt_reading_raw 
+            + PWR_BATT_VOLT_SMOOTHING_FACTOR * analogRead(PIN_BAT_VOLTAGE);
+        pwr_charging_reading_raw = (1-PWR_CHARGING_SMOOTHING_FACTOR) * pwr_charging_reading_raw 
+            + PWR_CHARGING_SMOOTHING_FACTOR * analogRead(PIN_CHARGING);
+        pwr_standby_reading_raw = (1-PWR_STANDBY_SMOOTHING_FACTOR) * pwr_standby_reading_raw 
+            + PWR_STANDBY_SMOOTHING_FACTOR * analogRead(PIN_STANDBY);
+
+        SLEEP(PWR_UPDATE_PERIOD)
+    }
+}
+
+void fetch_battery_voltage_to_string(char *str_out) {
+    str_out[0] = 'U';
+    str_out[1] = ' ';
+
+    float battery_voltage = PWR_GET_BATTERY_VOLTAGE;
+
+    str_out[2] = (int) battery_voltage % 10 + 48;
+    str_out[3] = (int)(battery_voltage * 10) % 10 + 48;
+    str_out[4] = (int)(battery_voltage * 100) % 10 + 48;
+    str_out[5] = (int)(battery_voltage * 1000) % 10 + 48;
+
+    str_out[6] = '\0';
+}
 
 //  +---------------------------------- Input Buttons ----------------------------------+
 
@@ -215,7 +251,7 @@ void main_loop_update() {
         }
         if (BTN_SAVE) {
             TS_REFRESH(MAIN_LOOP_TIMER);
-            TO(ML_SaveC);
+            TO(ML_Action_Menu);
         }
     }
 
@@ -229,6 +265,28 @@ void main_loop_update() {
         if (!BTN_CBPCH) TO(ML_Active);
 
         if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 2000) TO(ML_PVC_Start);
+    }
+
+    STATE(ML_Action_Menu) {
+        if (!BTN_SAVE) TO(ML_Active);
+
+        if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 1000) {
+            TS_REFRESH(MAIN_LOOP_TIMER);
+            TO(ML_Disp_Batt_Menu);
+        }
+    }
+
+    STATE(ML_Disp_Batt_Menu) {
+        if (!BTN_SAVE) TO(ML_Disp_Batt);
+
+        if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 2000) {
+            TS_REFRESH(MAIN_LOOP_TIMER);
+            TO(ML_SaveC);
+        }
+    }
+
+    STATE(ML_Disp_Batt) {
+        SLEEP_TO(1000, ML_Active)
     }
 
     STATE(ML_SaveC) {
@@ -354,6 +412,18 @@ void hud_interface_update() {
 
             case ML_EraseC: 
                 TO(HIU_Erase); 
+                break;
+
+            case ML_Action_Menu:
+                TO(HIU_Action_Menu);
+                break;
+            
+            case ML_Disp_Batt_Menu:
+                TO(HIU_Disp_Batt_Menu);
+                break;
+
+            case ML_Disp_Batt:
+                TO(HIU_Disp_batt);
                 break;
             
             default:
@@ -499,6 +569,35 @@ void hud_interface_update() {
         
         SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
     }
+
+    STATE(HIU_Action_Menu) {
+        if (GET_STATE(MAIN_LOOP) != HIU_Action_Menu) TO(HIU_HUB_Reset);
+        
+        segmented_display.set_static_text("ACTION"); 
+        
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_Disp_Batt_Menu) {
+        if (GET_STATE(MAIN_LOOP) != HIU_Disp_Batt_Menu) TO(HIU_HUB_Reset);
+        
+        segmented_display.set_static_text(" BATT "); 
+        
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_Disp_batt) {
+        if (GET_STATE(MAIN_LOOP) != HIU_Disp_batt) TO(HIU_HUB_Reset);
+        
+        //  Showing Battery Voltage 
+        char display_string[7];
+
+        fetch_battery_voltage_to_string(display_string);
+
+        segmented_display.set_static_text(display_string, 0b00100000);
+        
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
 }
 
 //  +------------------------------------ Status LED -----------------------------------+
@@ -554,6 +653,8 @@ void status_led_update() {
                 break;
 
             case ML_SaveC:
+            case ML_Action_Menu:
+            case ML_Disp_Batt_Menu:
                 led_gravity_calibration.off();
                 led_pitch_calibration.off();
                 led_epprom_save.on();
