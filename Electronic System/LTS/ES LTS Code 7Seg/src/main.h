@@ -40,7 +40,10 @@
 #define PIN_7SEG_CLK    9
 #define PIN_7SEG_DIO    8
 
-#define PIN_BAT_VOLTAGE A0
+#define PIN_EXT_PORT    A0
+#define PIN_BAT_VOLTAGE A3
+#define PIN_CHARGING    A2      //  Charging LED
+#define PIN_STANDBY     A1      //  Standby LED, charging finished
 
 //  +------------------------------------- EEPROM --------------------------------------+
 
@@ -81,6 +84,23 @@ void erase_eeprom();
 #define BTN_CBGV (!digitalRead(PIN_BTN_CBGV))
 #define BTN_CBPCH (!digitalRead(PIN_BTN_CBPCH))
 #define BTN_SAVE (!digitalRead(PIN_BTN_SAVE))
+
+//  +---------------------------------- Power Sensing ----------------------------------+
+
+//  active low
+
+#define PWR_CHARGING_THRESHOLD_B    50
+#define PWR_STANDBY_THRESHOLD_B     50
+
+unsigned int pwr_batt_volt_reading;
+unsigned int pwr_charging_reading;
+unsigned int pwr_standby_reading;
+
+//  Smoothing factor, lower is smoothier (weight more on the current reading)
+
+#define PWR_BATT_VOLT_SMOOTHING_FACTOR  0.1
+#define PWR_BATT_VOLT_SMOOTHING_FACTOR  0.1
+#define PWR_BATT_VOLT_SMOOTHING_FACTOR  0.1
 
 //  +------------------------------- Background Services -------------------------------+
 

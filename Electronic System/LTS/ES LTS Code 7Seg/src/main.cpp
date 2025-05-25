@@ -13,6 +13,11 @@ void setup() {
     pinMode(PIN_BTN_CBPCH, INPUT_PULLUP);
     pinMode(PIN_BTN_SAVE,  INPUT_PULLUP);
 
+    //  initialize power sensing current
+    pwr_batt_volt_reading = analogRead(PIN_BAT_VOLTAGE);
+    pwr_charging_reading = analogRead(PIN_CHARGING);
+    pwr_standby_reading = analogRead(PIN_STANDBY);
+
     imu.set_refresh_period_ms(200);
     imu.begin();
 
@@ -85,6 +90,8 @@ void erase_eeprom() {
     EEPROM.put(ADDR_EEPROM_VERSION, EEPROM_VERSION + 1);   
 }
 
+//  +---------------------------------- Power Sensing ----------------------------------+
+
 //  +---------------------------------- Input Buttons ----------------------------------+
 
 //  +------------------------------- Background Services -------------------------------+
@@ -109,7 +116,6 @@ void main_loop_update() {
 
             TO(ML_Active);
         }
-
 
         if (!is_eeprom_version_matched()) TO(ML_Idle_0);
     }
@@ -617,11 +623,18 @@ void logging_update() {
     STATE(1) {
         if (GET_STATE(MAIN_LOOP) != ML_Active) TO(0);
 
-        Serial.print(GET_STATE(MAIN_LOOP));
-        Serial.print(" -p ");
-        Serial.print(pitch_reading.get_pitch_deg());
-        Serial.print("; -d ");
-        Serial.print(depth_reading.get_depth_m());
+        // Serial.print(GET_STATE(MAIN_LOOP));
+        // Serial.print(" -p ");
+        // Serial.print(pitch_reading.get_pitch_deg());
+        // Serial.print("; -d ");
+        // Serial.print(depth_reading.get_depth_m());
+        // Serial.println();
+
+        Serial.print(analogRead(PIN_BAT_VOLTAGE));
+        Serial.print(",");
+        Serial.print(analogRead(PIN_CHARGING));
+        Serial.print(",");
+        Serial.print(analogRead(PIN_STANDBY));
         Serial.println();
 
         SLEEP(1000);
