@@ -277,7 +277,10 @@ void main_loop_update() {
     }
 
     STATE(ML_Disp_Batt_Menu) {
-        if (!BTN_SAVE) TO(ML_Disp_Batt);
+        if (!BTN_SAVE) {
+            TS_REFRESH(MAIN_LOOP_TIMER);
+            TO(ML_Disp_Batt);
+        }
 
         if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 2000) {
             TS_REFRESH(MAIN_LOOP_TIMER);
@@ -286,7 +289,9 @@ void main_loop_update() {
     }
 
     STATE(ML_Disp_Batt) {
-        SLEEP_TO(1000, ML_Active)
+        if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 5000) {
+            TO(ML_Active);
+        }
     }
 
     STATE(ML_SaveC) {
@@ -342,6 +347,30 @@ void main_loop_update() {
     }
 }
 //  +---------------------------------- HUD Interface ----------------------------------+
+
+void render_sensor_info() {
+    segmented_display.set_depth(depth_reading.get_depth_m());
+        for (int i = 0; i < DEPTH_DISPLAY_CONFIG_COUNT; i++) {
+            if (
+                (DEPTH_DISPLAY_CONFIG[i].lower_range <= depth_reading.get_depth_m()) 
+                && (depth_reading.get_depth_m() <= DEPTH_DISPLAY_CONFIG[i].upper_range)
+            ) {
+                segmented_display.set_depth_blink_mode(DEPTH_DISPLAY_CONFIG[i].status);
+                break;
+            }
+        }
+
+        segmented_display.set_pitch(pitch_reading.get_pitch_deg());
+        for (int i = 0; i < PITCH_DISPLAY_CONFIG_COUNT; i++) {
+            if (
+                (PITCH_DISPLAY_CONFIG[i].lower_range <= pitch_reading.get_pitch_deg()) 
+                && (pitch_reading.get_pitch_deg() <= PITCH_DISPLAY_CONFIG[i].upper_range)
+            ) {
+                segmented_display.set_pitch_blink_mode(PITCH_DISPLAY_CONFIG[i].status);
+                break;
+            }
+        }
+}
 
 void hud_interface_update() {
     SETUP_FSM_FUNCTION(HUD_INTERFACE_UPDATE);
@@ -436,34 +465,6 @@ void hud_interface_update() {
         segmented_display.set_static_text_blink_mode(SDBS_ON);
         text_scroll_counter = 0;
         TO(HIU_HUB);
-    }
-
-    STATE(HIU_Sensor_Info) {
-        if (GET_STATE(MAIN_LOOP) != ML_Active) TO(HIU_HUB_Reset);
-
-        segmented_display.set_depth(depth_reading.get_depth_m());
-        for (int i = 0; i < DEPTH_DISPLAY_CONFIG_COUNT; i++) {
-            if (
-                (DEPTH_DISPLAY_CONFIG[i].lower_range <= depth_reading.get_depth_m()) 
-                && (depth_reading.get_depth_m() <= DEPTH_DISPLAY_CONFIG[i].upper_range)
-            ) {
-                segmented_display.set_depth_blink_mode(DEPTH_DISPLAY_CONFIG[i].status);
-                break;
-            }
-        }
-
-        segmented_display.set_pitch(pitch_reading.get_pitch_deg());
-        for (int i = 0; i < PITCH_DISPLAY_CONFIG_COUNT; i++) {
-            if (
-                (PITCH_DISPLAY_CONFIG[i].lower_range <= pitch_reading.get_pitch_deg()) 
-                && (pitch_reading.get_pitch_deg() <= PITCH_DISPLAY_CONFIG[i].upper_range)
-            ) {
-                segmented_display.set_pitch_blink_mode(PITCH_DISPLAY_CONFIG[i].status);
-                break;
-            }
-        }
-
-        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
     }
 
     STATE(HIU_Idle_0) {
@@ -571,7 +572,7 @@ void hud_interface_update() {
     }
 
     STATE(HIU_Action_Menu) {
-        if (GET_STATE(MAIN_LOOP) != HIU_Action_Menu) TO(HIU_HUB_Reset);
+        if (GET_STATE(MAIN_LOOP) != ML_Action_Menu) TO(HIU_HUB_Reset);
         
         segmented_display.set_static_text("ACTION"); 
         
@@ -579,7 +580,7 @@ void hud_interface_update() {
     }
 
     STATE(HIU_Disp_Batt_Menu) {
-        if (GET_STATE(MAIN_LOOP) != HIU_Disp_Batt_Menu) TO(HIU_HUB_Reset);
+        if (GET_STATE(MAIN_LOOP) != ML_Disp_Batt_Menu) TO(HIU_HUB_Reset);
         
         segmented_display.set_static_text(" BATT "); 
         
@@ -587,7 +588,7 @@ void hud_interface_update() {
     }
 
     STATE(HIU_Disp_batt) {
-        if (GET_STATE(MAIN_LOOP) != HIU_Disp_batt) TO(HIU_HUB_Reset);
+        if (GET_STATE(MAIN_LOOP) != ML_Disp_Batt) TO(HIU_HUB_Reset);
         
         //  Showing Battery Voltage 
         char display_string[7];
@@ -596,6 +597,15 @@ void hud_interface_update() {
 
         segmented_display.set_static_text(display_string, 0b00100000);
         
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_Sensor_Info) {
+        if (GET_STATE(MAIN_LOOP) != ML_Active) TO(HIU_HUB_Reset);
+
+        //  All the battery information displaying are here
+        render_sensor_info();
+
         SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
     }
 }

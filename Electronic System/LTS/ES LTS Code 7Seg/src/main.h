@@ -178,6 +178,9 @@ const SegDisplayConfigItem PITCH_DISPLAY_CONFIG[PITCH_DISPLAY_CONFIG_COUNT] = {
     {45.,       INFINITY, SDBS_BLINK_FAST}
 };
 
+//  show the pitch and depth reading in the provided configuration
+void render_sensor_info();
+
 enum HUD_INTERFACE_UPDATE_FSM_STATES {
     HIU_Welcome,
     HIU_HUB, HIU_HUB_Reset, HIU_Sensor_Info, 
