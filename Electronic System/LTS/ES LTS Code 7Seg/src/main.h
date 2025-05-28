@@ -1,6 +1,8 @@
 #ifndef ___MAIN_H___
 #define ___MAIN_H___
 
+//  UW-HPS Electronics System LTS Ver. 2025
+
 //  Comment and Uncomment following lines to choose program fucntion
 #define ELECTRONIC_SYSTEM
 // #define SYSTEM_TEST
@@ -40,7 +42,10 @@
 #define PIN_7SEG_CLK    9
 #define PIN_7SEG_DIO    8
 
-#define PIN_BAT_VOLTAGE A0
+#define PIN_EXT_PORT    A0
+#define PIN_BAT_VOLTAGE A3
+#define PIN_CHARGING    A2      //  Charging LED
+#define PIN_STANDBY     A1      //  Standby LED, charging finished
 
 //  +------------------------------------- EEPROM --------------------------------------+
 
@@ -82,6 +87,68 @@ void erase_eeprom();
 #define BTN_CBPCH (!digitalRead(PIN_BTN_CBPCH))
 #define BTN_SAVE (!digitalRead(PIN_BTN_SAVE))
 
+//  +---------------------------------- Power Sensing ----------------------------------+
+
+//  active low
+
+#define PWR_CHARGING_THRESHOLD_B    40
+#define PWR_STANDBY_THRESHOLD_B     40
+
+#define PWR_UPDATE_PERIOD 200
+
+float pwr_batt_volt_reading_raw;
+float pwr_charging_reading_raw;
+float pwr_standby_reading_raw;
+
+//  Smoothing factor, lower is smoothier (weight on the current reading)
+
+#define PWR_BATT_VOLT_SMOOTHING_FACTOR  0.1
+#define PWR_CHARGING_SMOOTHING_FACTOR   0.1
+#define PWR_STANDBY_SMOOTHING_FACTOR    0.1
+
+#define PWR_GET_BATTERY_VOLTAGE     (pwr_batt_volt_reading_raw * 5.0 / 1024)
+
+//  CRITERIA
+
+//  Define as battery less than 3.3V
+#define PWR_IS_BATT_LOW (PWR_GET_BATTERY_VOLTAGE < 3.3)
+
+//  Define as battery less than 2.5V
+#define PWR_IS_BATT_DISCONNECTED (PWR_GET_BATTERY_VOLTAGE < 2.5)
+
+#define PWR_IS_CHARGING (pwr_charging_reading_raw < PWR_CHARGING_THRESHOLD_B)
+#define PWR_IS_STANDBY  (pwr_standby_reading_raw < PWR_STANDBY_THRESHOLD_B)
+
+//  power state 1
+#define PWR_EVENT_OPEN_SWITCH (                                             \
+    (PWR_IS_BATT_DISCONNECTED && PWR_IS_CHARGING)                           \
+    || (PWR_IS_BATT_DISCONNECTED && !PWR_IS_CHARGING && PWR_IS_STANDBY))    \
+
+//  power state 2
+#define PWR_EVENT_BATT_FAULT (                                              \
+    PWR_IS_BATT_DISCONNECTED && !PWR_IS_CHARGING && !PWR_IS_STANDBY)
+
+//  power state 3
+#define PWR_EVENT_CHARGING_STATE (                                          \
+    !PWR_IS_BATT_DISCONNECTED && PWR_IS_CHARGING)
+
+//  power state 4
+#define PWR_EVENT_FINISHED_STATE (                                          \
+    !PWR_IS_BATT_DISCONNECTED && !PWR_IS_CHARGING && PWR_IS_STANDBY)
+
+//  power state 0
+#define PWR_EVENT_NORMAL_OPT (                                              \
+    !PWR_IS_BATT_DISCONNECTED && !PWR_IS_CHARGING && !PWR_IS_STANDBY)
+
+//  Previous power state, used for resetting display scroling
+int pwr_prev_state;
+
+CREATE_FSM(POWER_SENSING_READING, 0)
+void power_sensing_reading_update();
+
+//  Require the decimal place 0b00100000
+void fetch_battery_voltage_to_string(char *str_out);
+
 //  +------------------------------- Background Services -------------------------------+
 
 IMU imu;
@@ -104,6 +171,7 @@ enum MAIN_LOOP_FSM_STATES {
     ML_Idle_0, ML_GPVC_0, ML_GPVC_Start, ML_GPVC_Reading, ML_GPVC_Finished,  //  GVPC: Gravity Vec Pressure Calibrate
     ML_Idle_1, ML_GPVC_1, ML_PVC_1, ML_PVC_Start, ML_PVC_Reading, ML_PVC_Finished,  //  PVC: Pitch Vec Calibrate
     ML_GPVC_2, ML_PVC_2, ML_SaveC, ML_SaveC_Finished, ML_EraseC, ML_EraseC_Finished,   //  SaveC: Save_Calibration
+    ML_Action_Menu, ML_Disp_Batt_Menu, ML_Disp_Batt,   
     ML_Active                                                                          //  EraseC: Erase Calibration
 };
 CREATE_FSM(MAIN_LOOP, ML_Initialization);
@@ -145,12 +213,16 @@ const SegDisplayConfigItem PITCH_DISPLAY_CONFIG[PITCH_DISPLAY_CONFIG_COUNT] = {
     {45.,       INFINITY, SDBS_BLINK_FAST}
 };
 
+//  show the pitch and depth reading in the provided configuration
+void render_sensor_info();
+
 enum HUD_INTERFACE_UPDATE_FSM_STATES {
     HIU_Welcome,
     HIU_HUB, HIU_HUB_Reset, HIU_Sensor_Info, 
     HIU_Idle_0, HIU_GPVC, 
     HIU_Idle_1, HIU_PVC, 
-    HIU_Reading, HIU_Finish, HIU_Save, HIU_Erase
+    HIU_Reading, HIU_Finish, HIU_Save, HIU_Erase, 
+    HIU_Action_Menu, HIU_Disp_Batt_Menu, HIU_Disp_batt
 };
 
 unsigned int text_scroll_counter;
