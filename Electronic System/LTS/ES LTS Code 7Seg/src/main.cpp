@@ -103,6 +103,16 @@ void power_sensing_reading_update() {
 
     STATE(1) {
         //  update sensor
+
+        // Serial.print(analogRead(PIN_BAT_VOLTAGE));
+        // Serial.print(";");
+        // Serial.print(PWR_BATT_VOLT_SMOOTHING_FACTOR * analogRead(PIN_BAT_VOLTAGE));
+        // Serial.print(";");
+        // Serial.print((1-PWR_BATT_VOLT_SMOOTHING_FACTOR) * pwr_batt_volt_reading_raw);
+        // Serial.print(";");
+        // Serial.print((1-PWR_BATT_VOLT_SMOOTHING_FACTOR) * pwr_batt_volt_reading_raw 
+        //     + PWR_BATT_VOLT_SMOOTHING_FACTOR * analogRead(PIN_BAT_VOLTAGE));
+        // Serial.println();
         pwr_batt_volt_reading_raw = (1-PWR_BATT_VOLT_SMOOTHING_FACTOR) * pwr_batt_volt_reading_raw 
             + PWR_BATT_VOLT_SMOOTHING_FACTOR * analogRead(PIN_BAT_VOLTAGE);
         pwr_charging_reading_raw = (1-PWR_CHARGING_SMOOTHING_FACTOR) * pwr_charging_reading_raw 
@@ -388,6 +398,7 @@ void hud_interface_update() {
 
             default:
                 text_scroll_counter = 0;
+                pwr_prev_state = 0; //  set to normal displaying mode
                 TO(HIU_HUB_Reset);
                 break;
         }
@@ -604,7 +615,90 @@ void hud_interface_update() {
         if (GET_STATE(MAIN_LOOP) != ML_Active) TO(HIU_HUB_Reset);
 
         //  All the battery information displaying are here
-        render_sensor_info();
+        if (PWR_EVENT_NORMAL_OPT) {
+            pwr_prev_state = 0;
+
+            render_sensor_info();
+
+        } else if (PWR_EVENT_OPEN_SWITCH) {
+            if (pwr_prev_state != 1) { text_scroll_counter = 0; }
+            pwr_prev_state = 1;
+
+            switch (text_scroll_counter / HUD_DISPLAY_TEXT_DELAY_MULTIPLIER) {
+                case 0: segmented_display.set_static_text(" OPEN ");      break;
+                case 1: segmented_display.set_static_text("SUITCH");      break;
+                case 2: segmented_display.set_static_text("  TO  ");      break;
+                case 3: segmented_display.set_static_text("CHARGE");      break;
+                case 4:
+                case 5: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
+
+                default:
+                    text_scroll_counter = 0;
+                    break;
+            }
+            
+            text_scroll_counter++;
+
+        } else if (PWR_EVENT_BATT_FAULT) {
+            if (pwr_prev_state != 2) { text_scroll_counter = 0; }
+            pwr_prev_state = 2;
+
+            switch (text_scroll_counter / HUD_DISPLAY_TEXT_DELAY_MULTIPLIER) {
+                case 0: segmented_display.set_static_text("BATTRY");      break;
+                case 1: segmented_display.set_static_text("Error ");       break;
+                case 2: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
+
+                default:
+                    text_scroll_counter = 0;
+                    break;
+            }
+            
+            text_scroll_counter++;
+
+        } else if (PWR_EVENT_CHARGING_STATE) {
+            if (pwr_prev_state != 3) { text_scroll_counter = 0; }
+            pwr_prev_state = 3;
+
+            switch (text_scroll_counter / HUD_DISPLAY_TEXT_DELAY_MULTIPLIER) {
+                case 0: 
+                case 1: 
+                case 2: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
+                case 3: 
+                case 4: segmented_display.set_static_text("CHARGE");      break; 
+                case 5:
+                case 6: 
+                case 7:
+                    char display_string[7];
+                    fetch_battery_voltage_to_string(display_string);
+                    segmented_display.set_static_text(display_string, 0b00100000);
+                    break;
+                case 8:
+                case 9:
+                case 10: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
+
+                default:
+                    text_scroll_counter = 0;
+                    break;
+            }
+            
+            text_scroll_counter++;
+
+        } else if (PWR_EVENT_BATT_FAULT) {
+            if (pwr_prev_state != 4) { text_scroll_counter = 0; }
+            pwr_prev_state = 4;
+
+            switch (text_scroll_counter / HUD_DISPLAY_TEXT_DELAY_MULTIPLIER) {
+                case 0: segmented_display.set_static_text("CHARGE");      break;
+                case 1: segmented_display.set_static_text("FINISH");      break;
+                case 2: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
+
+                default:
+                    text_scroll_counter = 0;
+                    break;
+            }
+            
+            text_scroll_counter++;
+        }
 
         SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
     }
@@ -734,21 +828,21 @@ void logging_update() {
     STATE(1) {
         if (GET_STATE(MAIN_LOOP) != ML_Active) TO(0);
 
-        // Serial.print(GET_STATE(MAIN_LOOP));
-        // Serial.print(" -p ");
-        // Serial.print(pitch_reading.get_pitch_deg());
-        // Serial.print("; -d ");
-        // Serial.print(depth_reading.get_depth_m());
-        // Serial.println();
-
-        Serial.print(analogRead(PIN_BAT_VOLTAGE));
-        Serial.print(",");
-        Serial.print(analogRead(PIN_CHARGING));
-        Serial.print(",");
-        Serial.print(analogRead(PIN_STANDBY));
+        Serial.print(GET_STATE(MAIN_LOOP));
+        Serial.print(" -p ");
+        Serial.print(pitch_reading.get_pitch_deg());
+        Serial.print("; -d ");
+        Serial.print(depth_reading.get_depth_m());
         Serial.println();
 
-        SLEEP(1000);
+        // Serial.print(pwr_batt_volt_reading_raw);
+        // Serial.print(",");
+        // Serial.print(pwr_charging_reading_raw);
+        // Serial.print(",");
+        // Serial.print(pwr_standby_reading_raw);
+        // Serial.println();
+
+        SLEEP(2000);
     }
 }
 

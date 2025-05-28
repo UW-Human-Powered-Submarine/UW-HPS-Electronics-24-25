@@ -91,14 +91,14 @@ void erase_eeprom();
 
 //  active low
 
-#define PWR_CHARGING_THRESHOLD_B    50
-#define PWR_STANDBY_THRESHOLD_B     50
+#define PWR_CHARGING_THRESHOLD_B    40
+#define PWR_STANDBY_THRESHOLD_B     40
 
 #define PWR_UPDATE_PERIOD 200
 
-unsigned int pwr_batt_volt_reading_raw;
-unsigned int pwr_charging_reading_raw;
-unsigned int pwr_standby_reading_raw;
+float pwr_batt_volt_reading_raw;
+float pwr_charging_reading_raw;
+float pwr_standby_reading_raw;
 
 //  Smoothing factor, lower is smoothier (weight on the current reading)
 
@@ -107,6 +107,41 @@ unsigned int pwr_standby_reading_raw;
 #define PWR_STANDBY_SMOOTHING_FACTOR    0.1
 
 #define PWR_GET_BATTERY_VOLTAGE     (pwr_batt_volt_reading_raw * 5.0 / 1024)
+
+//  CRITERIA
+
+//  Define as battery less than 3.3V
+#define PWR_IS_BATT_LOW (PWR_GET_BATTERY_VOLTAGE < 3.3)
+
+//  Define as battery less than 2.5V
+#define PWR_IS_BATT_DISCONNECTED (PWR_GET_BATTERY_VOLTAGE < 2.5)
+
+#define PWR_IS_CHARGING (pwr_charging_reading_raw < PWR_CHARGING_THRESHOLD_B)
+#define PWR_IS_STANDBY  (pwr_standby_reading_raw < PWR_STANDBY_THRESHOLD_B)
+
+//  power state 1
+#define PWR_EVENT_OPEN_SWITCH (                                             \
+    (PWR_IS_BATT_DISCONNECTED && PWR_IS_CHARGING)                           \
+    || (PWR_IS_BATT_DISCONNECTED && !PWR_IS_CHARGING && PWR_IS_STANDBY))    \
+
+//  power state 2
+#define PWR_EVENT_BATT_FAULT (                                              \
+    PWR_IS_BATT_DISCONNECTED && !PWR_IS_CHARGING && !PWR_IS_STANDBY)
+
+//  power state 3
+#define PWR_EVENT_CHARGING_STATE (                                          \
+    !PWR_IS_BATT_DISCONNECTED && PWR_IS_CHARGING)
+
+//  power state 4
+#define PWR_EVENT_FINISHED_STATE (                                          \
+    !PWR_IS_BATT_DISCONNECTED && !PWR_IS_CHARGING && PWR_IS_STANDBY)
+
+//  power state 0
+#define PWR_EVENT_NORMAL_OPT (                                              \
+    !PWR_IS_BATT_DISCONNECTED && !PWR_IS_CHARGING && !PWR_IS_STANDBY)
+
+//  Previous power state, used for resetting display scroling
+int pwr_prev_state;
 
 CREATE_FSM(POWER_SENSING_READING, 0)
 void power_sensing_reading_update();
