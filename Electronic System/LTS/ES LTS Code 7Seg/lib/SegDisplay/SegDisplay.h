@@ -16,6 +16,7 @@ public:
     void begin();
 
     void set_static_text(const char * static_text);
+    void set_static_text(const char * static_text, unsigned char dot_placement);
     void set_static_text_blink_mode(SegDisplayBlinkState mode);
 
     void set_depth(float depth);
@@ -47,6 +48,7 @@ private:
 
     char static_text[7];
     bool display_static_text;
+    unsigned char dot_placement;
     SegDisplayBlinkState static_text_display_mode;
 
     float depth; 

@@ -47,6 +47,8 @@ void loop() {
         depth_reading.update();
     } 
 
+    power_sensing_reading_update();
+
     led_builtin.update();
     led_gravity_calibration.update();
     led_pitch_calibration.update();
@@ -85,6 +87,57 @@ void erase_eeprom() {
     EEPROM.put(ADDR_EEPROM_VERSION, EEPROM_VERSION + 1);   
 }
 
+//  +---------------------------------- Power Sensing ----------------------------------+
+
+void power_sensing_reading_update() {
+    SETUP_FSM_FUNCTION(POWER_SENSING_READING)
+
+    STATE(0) {
+        //  initialize power sensing current
+        pwr_batt_volt_reading_raw = analogRead(PIN_BAT_VOLTAGE);
+        pwr_charging_reading_raw = analogRead(PIN_CHARGING);
+        pwr_standby_reading_raw = analogRead(PIN_STANDBY);
+
+        TO(1)
+    }
+
+    STATE(1) {
+        //  update sensor
+
+        // Serial.print(analogRead(PIN_BAT_VOLTAGE));
+        // Serial.print(";");
+        // Serial.print(PWR_BATT_VOLT_SMOOTHING_FACTOR * analogRead(PIN_BAT_VOLTAGE));
+        // Serial.print(";");
+        // Serial.print((1-PWR_BATT_VOLT_SMOOTHING_FACTOR) * pwr_batt_volt_reading_raw);
+        // Serial.print(";");
+        // Serial.print((1-PWR_BATT_VOLT_SMOOTHING_FACTOR) * pwr_batt_volt_reading_raw 
+        //     + PWR_BATT_VOLT_SMOOTHING_FACTOR * analogRead(PIN_BAT_VOLTAGE));
+        // Serial.println();
+        pwr_batt_volt_reading_raw = (1-PWR_BATT_VOLT_SMOOTHING_FACTOR) * pwr_batt_volt_reading_raw 
+            + PWR_BATT_VOLT_SMOOTHING_FACTOR * analogRead(PIN_BAT_VOLTAGE);
+        pwr_charging_reading_raw = (1-PWR_CHARGING_SMOOTHING_FACTOR) * pwr_charging_reading_raw 
+            + PWR_CHARGING_SMOOTHING_FACTOR * analogRead(PIN_CHARGING);
+        pwr_standby_reading_raw = (1-PWR_STANDBY_SMOOTHING_FACTOR) * pwr_standby_reading_raw 
+            + PWR_STANDBY_SMOOTHING_FACTOR * analogRead(PIN_STANDBY);
+
+        SLEEP(PWR_UPDATE_PERIOD)
+    }
+}
+
+void fetch_battery_voltage_to_string(char *str_out) {
+    str_out[0] = 'U';
+    str_out[1] = ' ';
+
+    float battery_voltage = PWR_GET_BATTERY_VOLTAGE;
+
+    str_out[2] = (int) battery_voltage % 10 + 48;
+    str_out[3] = (int)(battery_voltage * 10) % 10 + 48;
+    str_out[4] = (int)(battery_voltage * 100) % 10 + 48;
+    str_out[5] = (int)(battery_voltage * 1000) % 10 + 48;
+
+    str_out[6] = '\0';
+}
+
 //  +---------------------------------- Input Buttons ----------------------------------+
 
 //  +------------------------------- Background Services -------------------------------+
@@ -109,7 +162,6 @@ void main_loop_update() {
 
             TO(ML_Active);
         }
-
 
         if (!is_eeprom_version_matched()) TO(ML_Idle_0);
     }
@@ -209,7 +261,7 @@ void main_loop_update() {
         }
         if (BTN_SAVE) {
             TS_REFRESH(MAIN_LOOP_TIMER);
-            TO(ML_SaveC);
+            TO(ML_Action_Menu);
         }
     }
 
@@ -223,6 +275,33 @@ void main_loop_update() {
         if (!BTN_CBPCH) TO(ML_Active);
 
         if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 2000) TO(ML_PVC_Start);
+    }
+
+    STATE(ML_Action_Menu) {
+        if (!BTN_SAVE) TO(ML_Active);
+
+        if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 1000) {
+            TS_REFRESH(MAIN_LOOP_TIMER);
+            TO(ML_Disp_Batt_Menu);
+        }
+    }
+
+    STATE(ML_Disp_Batt_Menu) {
+        if (!BTN_SAVE) {
+            TS_REFRESH(MAIN_LOOP_TIMER);
+            TO(ML_Disp_Batt);
+        }
+
+        if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 2000) {
+            TS_REFRESH(MAIN_LOOP_TIMER);
+            TO(ML_SaveC);
+        }
+    }
+
+    STATE(ML_Disp_Batt) {
+        if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 5000) {
+            TO(ML_Active);
+        }
     }
 
     STATE(ML_SaveC) {
@@ -279,6 +358,30 @@ void main_loop_update() {
 }
 //  +---------------------------------- HUD Interface ----------------------------------+
 
+void render_sensor_info() {
+    segmented_display.set_depth(depth_reading.get_depth_m());
+        for (int i = 0; i < DEPTH_DISPLAY_CONFIG_COUNT; i++) {
+            if (
+                (DEPTH_DISPLAY_CONFIG[i].lower_range <= depth_reading.get_depth_m()) 
+                && (depth_reading.get_depth_m() <= DEPTH_DISPLAY_CONFIG[i].upper_range)
+            ) {
+                segmented_display.set_depth_blink_mode(DEPTH_DISPLAY_CONFIG[i].status);
+                break;
+            }
+        }
+
+        segmented_display.set_pitch(pitch_reading.get_pitch_deg());
+        for (int i = 0; i < PITCH_DISPLAY_CONFIG_COUNT; i++) {
+            if (
+                (PITCH_DISPLAY_CONFIG[i].lower_range <= pitch_reading.get_pitch_deg()) 
+                && (pitch_reading.get_pitch_deg() <= PITCH_DISPLAY_CONFIG[i].upper_range)
+            ) {
+                segmented_display.set_pitch_blink_mode(PITCH_DISPLAY_CONFIG[i].status);
+                break;
+            }
+        }
+}
+
 void hud_interface_update() {
     SETUP_FSM_FUNCTION(HUD_INTERFACE_UPDATE);
 
@@ -295,6 +398,7 @@ void hud_interface_update() {
 
             default:
                 text_scroll_counter = 0;
+                pwr_prev_state = 0; //  set to normal displaying mode
                 TO(HIU_HUB_Reset);
                 break;
         }
@@ -349,6 +453,18 @@ void hud_interface_update() {
             case ML_EraseC: 
                 TO(HIU_Erase); 
                 break;
+
+            case ML_Action_Menu:
+                TO(HIU_Action_Menu);
+                break;
+            
+            case ML_Disp_Batt_Menu:
+                TO(HIU_Disp_Batt_Menu);
+                break;
+
+            case ML_Disp_Batt:
+                TO(HIU_Disp_batt);
+                break;
             
             default:
                 break;
@@ -360,34 +476,6 @@ void hud_interface_update() {
         segmented_display.set_static_text_blink_mode(SDBS_ON);
         text_scroll_counter = 0;
         TO(HIU_HUB);
-    }
-
-    STATE(HIU_Sensor_Info) {
-        if (GET_STATE(MAIN_LOOP) != ML_Active) TO(HIU_HUB_Reset);
-
-        segmented_display.set_depth(depth_reading.get_depth_m());
-        for (int i = 0; i < DEPTH_DISPLAY_CONFIG_COUNT; i++) {
-            if (
-                (DEPTH_DISPLAY_CONFIG[i].lower_range <= depth_reading.get_depth_m()) 
-                && (depth_reading.get_depth_m() <= DEPTH_DISPLAY_CONFIG[i].upper_range)
-            ) {
-                segmented_display.set_depth_blink_mode(DEPTH_DISPLAY_CONFIG[i].status);
-                break;
-            }
-        }
-
-        segmented_display.set_pitch(pitch_reading.get_pitch_deg());
-        for (int i = 0; i < PITCH_DISPLAY_CONFIG_COUNT; i++) {
-            if (
-                (PITCH_DISPLAY_CONFIG[i].lower_range <= pitch_reading.get_pitch_deg()) 
-                && (pitch_reading.get_pitch_deg() <= PITCH_DISPLAY_CONFIG[i].upper_range)
-            ) {
-                segmented_display.set_pitch_blink_mode(PITCH_DISPLAY_CONFIG[i].status);
-                break;
-            }
-        }
-
-        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
     }
 
     STATE(HIU_Idle_0) {
@@ -493,6 +581,127 @@ void hud_interface_update() {
         
         SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
     }
+
+    STATE(HIU_Action_Menu) {
+        if (GET_STATE(MAIN_LOOP) != ML_Action_Menu) TO(HIU_HUB_Reset);
+        
+        segmented_display.set_static_text("ACTION"); 
+        
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_Disp_Batt_Menu) {
+        if (GET_STATE(MAIN_LOOP) != ML_Disp_Batt_Menu) TO(HIU_HUB_Reset);
+        
+        segmented_display.set_static_text(" BATT "); 
+        
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_Disp_batt) {
+        if (GET_STATE(MAIN_LOOP) != ML_Disp_Batt) TO(HIU_HUB_Reset);
+        
+        //  Showing Battery Voltage 
+        char display_string[7];
+
+        fetch_battery_voltage_to_string(display_string);
+
+        segmented_display.set_static_text(display_string, 0b00100000);
+        
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
+    STATE(HIU_Sensor_Info) {
+        if (GET_STATE(MAIN_LOOP) != ML_Active) TO(HIU_HUB_Reset);
+
+        //  All the battery information displaying are here
+        if (PWR_EVENT_NORMAL_OPT) {
+            pwr_prev_state = 0;
+
+            render_sensor_info();
+
+        } else if (PWR_EVENT_OPEN_SWITCH) {
+            if (pwr_prev_state != 1) { text_scroll_counter = 0; }
+            pwr_prev_state = 1;
+
+            switch (text_scroll_counter / HUD_DISPLAY_TEXT_DELAY_MULTIPLIER) {
+                case 0: segmented_display.set_static_text(" OPEN ");      break;
+                case 1: segmented_display.set_static_text("SUITCH");      break;
+                case 2: segmented_display.set_static_text("  TO  ");      break;
+                case 3: segmented_display.set_static_text("CHARGE");      break;
+                case 4:
+                case 5: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
+
+                default:
+                    text_scroll_counter = 0;
+                    break;
+            }
+            
+            text_scroll_counter++;
+
+        } else if (PWR_EVENT_BATT_FAULT) {
+            if (pwr_prev_state != 2) { text_scroll_counter = 0; }
+            pwr_prev_state = 2;
+
+            switch (text_scroll_counter / HUD_DISPLAY_TEXT_DELAY_MULTIPLIER) {
+                case 0: segmented_display.set_static_text("BATTRY");      break;
+                case 1: segmented_display.set_static_text("Error ");       break;
+                case 2: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
+
+                default:
+                    text_scroll_counter = 0;
+                    break;
+            }
+            
+            text_scroll_counter++;
+
+        } else if (PWR_EVENT_CHARGING_STATE) {
+            if (pwr_prev_state != 3) { text_scroll_counter = 0; }
+            pwr_prev_state = 3;
+
+            switch (text_scroll_counter / HUD_DISPLAY_TEXT_DELAY_MULTIPLIER) {
+                case 0: 
+                case 1: 
+                case 2: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
+                case 3: 
+                case 4: segmented_display.set_static_text("CHARGE");      break; 
+                case 5:
+                case 6: 
+                case 7:
+                    char display_string[7];
+                    fetch_battery_voltage_to_string(display_string);
+                    segmented_display.set_static_text(display_string, 0b00100000);
+                    break;
+                case 8:
+                case 9:
+                case 10: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
+
+                default:
+                    text_scroll_counter = 0;
+                    break;
+            }
+            
+            text_scroll_counter++;
+
+        } else if (PWR_EVENT_BATT_FAULT) {
+            if (pwr_prev_state != 4) { text_scroll_counter = 0; }
+            pwr_prev_state = 4;
+
+            switch (text_scroll_counter / HUD_DISPLAY_TEXT_DELAY_MULTIPLIER) {
+                case 0: segmented_display.set_static_text("CHARGE");      break;
+                case 1: segmented_display.set_static_text("FINISH");      break;
+                case 2: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
+
+                default:
+                    text_scroll_counter = 0;
+                    break;
+            }
+            
+            text_scroll_counter++;
+        }
+
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
 }
 
 //  +------------------------------------ Status LED -----------------------------------+
@@ -548,6 +757,8 @@ void status_led_update() {
                 break;
 
             case ML_SaveC:
+            case ML_Action_Menu:
+            case ML_Disp_Batt_Menu:
                 led_gravity_calibration.off();
                 led_pitch_calibration.off();
                 led_epprom_save.on();
@@ -624,7 +835,14 @@ void logging_update() {
         Serial.print(depth_reading.get_depth_m());
         Serial.println();
 
-        SLEEP(1000);
+        // Serial.print(pwr_batt_volt_reading_raw);
+        // Serial.print(",");
+        // Serial.print(pwr_charging_reading_raw);
+        // Serial.print(",");
+        // Serial.print(pwr_standby_reading_raw);
+        // Serial.println();
+
+        SLEEP(2000);
     }
 }
 
