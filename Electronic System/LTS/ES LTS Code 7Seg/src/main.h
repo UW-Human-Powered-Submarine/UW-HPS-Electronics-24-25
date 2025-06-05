@@ -110,8 +110,8 @@ float pwr_standby_reading_raw;
 
 //  CRITERIA
 
-//  Define as battery less than 3.3V
-#define PWR_IS_BATT_LOW (PWR_GET_BATTERY_VOLTAGE < 3.3)
+//  Define as battery less than 3.2V
+#define PWR_IS_BATT_LOW (PWR_GET_BATTERY_VOLTAGE < 3.2)
 
 //  Define as battery less than 2.5V
 #define PWR_IS_BATT_DISCONNECTED (PWR_GET_BATTERY_VOLTAGE < 2.5)
@@ -136,7 +136,10 @@ float pwr_standby_reading_raw;
 #define PWR_EVENT_FINISHED_STATE (                                          \
     !PWR_IS_BATT_DISCONNECTED && !PWR_IS_CHARGING && PWR_IS_STANDBY)
 
-//  power state 0
+//  power state 5
+#define PWR_EVENT_BATT_LOW_STATE    PWR_IS_BATT_LOW
+
+//  power state 0, put in the else statement
 #define PWR_EVENT_NORMAL_OPT (                                              \
     !PWR_IS_BATT_DISCONNECTED && !PWR_IS_CHARGING && !PWR_IS_STANDBY)
 
@@ -149,8 +152,22 @@ void power_sensing_reading_update();
 //  Require the decimal place 0b00100000
 void fetch_battery_voltage_to_string(char *str_out);
 
+//  This is an estimation to battery capacity. 
+//  It is a linear interpolation between
+void fetch_battery_percentage_to_string(char *str_out);
+
+//  battery percentage conversion
+#define PWR_V_BATT_MIN   3.1f
+#define PWR_V_BATT_MAX   3.65f
+#define PWR_PERCENT_BATT_MIN  0.0f
+#define PWR_PERCENT_BATT_MAX  1.0f
+
+#define PWR_BATTERY_PERCENTAGE (((PWR_GET_BATTERY_VOLTAGE) - PWR_V_BATT_MIN) / (PWR_V_BATT_MAX - PWR_V_BATT_MIN) * (PWR_PERCENT_BATT_MAX - PWR_PERCENT_BATT_MIN) + PWR_PERCENT_BATT_MIN)
+
+
 //  +------------------------------- Background Services -------------------------------+
 
+#define PITCH_READING_SMOOTHING_FACTOR 0.3
 IMU imu;
 PitchReading pitch_reading;
 
@@ -171,7 +188,7 @@ enum MAIN_LOOP_FSM_STATES {
     ML_Idle_0, ML_GPVC_0, ML_GPVC_Start, ML_GPVC_Reading, ML_GPVC_Finished,  //  GVPC: Gravity Vec Pressure Calibrate
     ML_Idle_1, ML_GPVC_1, ML_PVC_1, ML_PVC_Start, ML_PVC_Reading, ML_PVC_Finished,  //  PVC: Pitch Vec Calibrate
     ML_GPVC_2, ML_PVC_2, ML_SaveC, ML_SaveC_Finished, ML_EraseC, ML_EraseC_Finished,   //  SaveC: Save_Calibration
-    ML_Action_Menu, ML_Disp_Batt_Menu, ML_Disp_Batt,   
+    ML_Action_Menu, ML_Disp_Batt_Menu, ML_Disp_Batt, ML_Disp_Batt2,  
     ML_Active                                                                          //  EraseC: Erase Calibration
 };
 CREATE_FSM(MAIN_LOOP, ML_Initialization);
@@ -222,7 +239,7 @@ enum HUD_INTERFACE_UPDATE_FSM_STATES {
     HIU_Idle_0, HIU_GPVC, 
     HIU_Idle_1, HIU_PVC, 
     HIU_Reading, HIU_Finish, HIU_Save, HIU_Erase, 
-    HIU_Action_Menu, HIU_Disp_Batt_Menu, HIU_Disp_batt
+    HIU_Action_Menu, HIU_Disp_Batt_Menu, HIU_Disp_batt, HIU_Disp_batt2
 };
 
 unsigned int text_scroll_counter;
