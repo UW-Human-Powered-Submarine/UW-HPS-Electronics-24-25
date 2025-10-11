@@ -29,7 +29,12 @@ public:
     void register_imu(IMU *imu);
 
     float get_pitch_deg() const;
+    float get_pitch_deg_smoothed() const;
+
     float refresh_and_get_pitch_deg();
+
+    float get_smoothing_factor() const;
+    void set_smoothing_factor(float smoothing_factor);
 
     bool get_is_vec_gravity_calibrated() const;
     bool get_is_vec_pitch_direction_calibrated() const;
@@ -47,6 +52,11 @@ private:
     Vector3D unit_vec_pitch_direction_calibration;
 
     float pitch_deg;
+    float pitch_deg_smoothing;
+
+    //  weight on the new data, smaller means smoother
+    //  must be in [0, 1]
+    float smoothing_factor;
 
     void event() override;
 

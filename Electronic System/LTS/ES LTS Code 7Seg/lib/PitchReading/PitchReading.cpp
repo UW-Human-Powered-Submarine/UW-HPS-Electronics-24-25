@@ -8,7 +8,7 @@ PitchReading::PitchReading(unsigned long refresh_period_us)
     , imu(nullptr)
     , is_vec_gravity_calibrated(false), unit_vec_gravity_calibration()
     , is_vec_pitch_direction_calibrated(false), unit_vec_pitch_direction_calibration()
-    , pitch_deg(0.0f) {
+    , pitch_deg(0.0f), pitch_deg_smoothing(0.0f), smoothing_factor(0.1) {
 }
 
 PitchReading::~PitchReading() {
@@ -42,9 +42,17 @@ float PitchReading::get_pitch_deg() const {
     return this->pitch_deg;
 }
 
+float PitchReading::get_pitch_deg_smoothed() const {
+    return this->pitch_deg_smoothing;
+}
+
 float PitchReading::refresh_and_get_pitch_deg() {
     this->calculate_angle_deg();
     return this->pitch_deg;
+}
+
+void PitchReading::set_smoothing_factor(float smoothing_factor) {
+    this->smoothing_factor = smoothing_factor;
 }
 
 bool PitchReading::get_is_vec_gravity_calibrated() const {
@@ -99,4 +107,6 @@ void PitchReading::calculate_angle_deg() {
     float sign = vec_dot_pitch_direction / abs(vec_dot_pitch_direction);
 
     this->pitch_deg = vec_acc_pitch_plane.angle_to_in_deg(this->unit_vec_gravity_calibration) * sign;
+    this->pitch_deg_smoothing = this->smoothing_factor * pitch_deg
+        + (1 - this->smoothing_factor) * pitch_deg_smoothing;
 }

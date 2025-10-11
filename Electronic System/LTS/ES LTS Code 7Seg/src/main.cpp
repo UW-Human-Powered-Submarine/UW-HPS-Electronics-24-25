@@ -18,6 +18,7 @@ void setup() {
 
     pitch_reading.set_refresh_period_ms(200);
     pitch_reading.register_imu(&imu);
+    pitch_reading.set_smoothing_factor(PITCH_READING_SMOOTHING_FACTOR);
 
     ms5873.set_refresh_period_ms(200);
     ms5873.setModel(MS5837::MS5837_02BA);
@@ -134,6 +135,32 @@ void fetch_battery_voltage_to_string(char *str_out) {
     str_out[3] = (int)(battery_voltage * 10) % 10 + 48;
     str_out[4] = (int)(battery_voltage * 100) % 10 + 48;
     str_out[5] = (int)(battery_voltage * 1000) % 10 + 48;
+
+    str_out[6] = '\0';
+}
+
+void fetch_battery_percentage_to_string(char *str_out) {
+    str_out[0] = 'P';
+    str_out[1] = ' ';
+    str_out[2] = ' ';
+    str_out[3] = ' ';
+    str_out[4] = ' ';
+    str_out[5] = ' ';
+
+    int battery_Percentage = (int)(PWR_BATTERY_PERCENTAGE * 100);
+
+    if (battery_Percentage >= 100) {
+        str_out[3] = '1';
+        str_out[4] = '0';
+        str_out[5] = '0';
+    } else {
+        int tens = battery_Percentage / 10;
+        int ones = battery_Percentage % 10;
+        if (tens > 0) {
+            str_out[4] = tens + 48;
+        }
+        str_out[5] = ones + 48;
+    }
 
     str_out[6] = '\0';
 }
@@ -299,7 +326,13 @@ void main_loop_update() {
     }
 
     STATE(ML_Disp_Batt) {
-        if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 5000) {
+        if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 3000) {
+            TS_REFRESH(MAIN_LOOP_TIMER);
+            TO(ML_Disp_Batt2);
+        }
+    }
+    STATE(ML_Disp_Batt2) {
+        if (TS_TIME_ELAPSED_MS(MAIN_LOOP_TIMER) >= 3000) {
             TO(ML_Active);
         }
     }
@@ -370,11 +403,11 @@ void render_sensor_info() {
             }
         }
 
-        segmented_display.set_pitch(pitch_reading.get_pitch_deg());
+        segmented_display.set_pitch(pitch_reading.get_pitch_deg_smoothed());
         for (int i = 0; i < PITCH_DISPLAY_CONFIG_COUNT; i++) {
             if (
-                (PITCH_DISPLAY_CONFIG[i].lower_range <= pitch_reading.get_pitch_deg()) 
-                && (pitch_reading.get_pitch_deg() <= PITCH_DISPLAY_CONFIG[i].upper_range)
+                (PITCH_DISPLAY_CONFIG[i].lower_range <= pitch_reading.get_pitch_deg_smoothed()) 
+                && (pitch_reading.get_pitch_deg_smoothed() <= PITCH_DISPLAY_CONFIG[i].upper_range)
             ) {
                 segmented_display.set_pitch_blink_mode(PITCH_DISPLAY_CONFIG[i].status);
                 break;
@@ -464,6 +497,10 @@ void hud_interface_update() {
 
             case ML_Disp_Batt:
                 TO(HIU_Disp_batt);
+                break;
+
+            case ML_Disp_Batt2:
+                TO(HIU_Disp_batt2);
                 break;
             
             default:
@@ -611,16 +648,24 @@ void hud_interface_update() {
         SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
     }
 
+    STATE(HIU_Disp_batt2) {
+        if (GET_STATE(MAIN_LOOP) != ML_Disp_Batt2) TO(HIU_HUB_Reset);
+        
+        //  Showing Battery percentage 
+        char display_string[7];
+
+        fetch_battery_percentage_to_string(display_string);
+
+        segmented_display.set_static_text(display_string);
+        
+        SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
+    }
+
     STATE(HIU_Sensor_Info) {
         if (GET_STATE(MAIN_LOOP) != ML_Active) TO(HIU_HUB_Reset);
 
         //  All the battery information displaying are here
-        if (PWR_EVENT_NORMAL_OPT) {
-            pwr_prev_state = 0;
-
-            render_sensor_info();
-
-        } else if (PWR_EVENT_OPEN_SWITCH) {
+        if (PWR_EVENT_OPEN_SWITCH) {
             if (pwr_prev_state != 1) { text_scroll_counter = 0; }
             pwr_prev_state = 1;
 
@@ -659,6 +704,8 @@ void hud_interface_update() {
             if (pwr_prev_state != 3) { text_scroll_counter = 0; }
             pwr_prev_state = 3;
 
+            char display_string[7];
+
             switch (text_scroll_counter / HUD_DISPLAY_TEXT_DELAY_MULTIPLIER) {
                 case 0: 
                 case 1: 
@@ -668,13 +715,19 @@ void hud_interface_update() {
                 case 5:
                 case 6: 
                 case 7:
-                    char display_string[7];
                     fetch_battery_voltage_to_string(display_string);
                     segmented_display.set_static_text(display_string, 0b00100000);
                     break;
                 case 8:
                 case 9:
-                case 10: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
+                case 10:
+                    fetch_battery_percentage_to_string(display_string);
+                    segmented_display.set_static_text(display_string);
+                    break;
+                case 11:
+                case 12:
+                case 13:
+                case 14: segmented_display.set_static_text(HUD_EMPTY_MSG); break;
 
                 default:
                     text_scroll_counter = 0;
@@ -698,6 +751,34 @@ void hud_interface_update() {
             }
             
             text_scroll_counter++;
+
+        } else if (PWR_EVENT_BATT_LOW_STATE) {
+            if (pwr_prev_state != 5) { text_scroll_counter = 0; }
+            pwr_prev_state = 5;
+
+            switch (text_scroll_counter / HUD_DISPLAY_TEXT_DELAY_MULTIPLIER) {
+                case 0: segmented_display.set_static_text("LOWBAT");      break; 
+                case 1: 
+                case 2: 
+                case 3: 
+                case 4: 
+                case 5:
+                case 6: 
+                case 7:
+                case 8:
+                case 9: render_sensor_info(); break;
+
+                default:
+                    text_scroll_counter = 0;
+                    break;
+            } 
+            
+            text_scroll_counter++;
+        } else if (PWR_EVENT_NORMAL_OPT) {
+            pwr_prev_state = 0;
+
+            render_sensor_info();
+
         }
 
         SLEEP(HUD_DISPLAY_REFRESH_PERIOD);
