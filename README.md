@@ -2,7 +2,7 @@
 Code Repo for Human Powered Submarine Electronics Subteam 2024-2025 at University of Washington. 
 
 Contacts:
-- **Zihui(Andy) Liu**: <liuzihui@uw.edu> (work), <salzhx@gmail.com> (personal, github)
+- **Nate Wagner**: <nww831@cs.washington.edu> (school), <nwwagner831@gmail.com> (personal, github)
 
 ## Contribution Policy
 
@@ -11,9 +11,9 @@ Contacts:
 ## Repository Structure
 
 - **Electronics System**: The master code for electronics system
-  - **Long-Term Support (LTS) Electronics System**
-  - **Nightly Electronics System**
+  - **2026 System**
   - **Variable-Pitch Propeller (VPP)**
+  - **Controls System**
 - **Demo**: All the demo code from workshop
 - **Test**: Testing code for each module
   - This folder is for unit tests for individual system modules, such as pressure sensor and heads-up display. 
