@@ -4,6 +4,7 @@ Contacts:
 - **Zihui(Andy) Liu**: <liuzihui@uw.edu> (work), <salzhx@gmail.com> (personal, github)
 
 ## Contribution Policy
+**Please work on your own (or your group's) branch** and then merge to **dev** branch. Let's keep main as the working version of the code. 
 
 ## Repository Structure
 
