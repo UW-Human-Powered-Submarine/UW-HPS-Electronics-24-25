@@ -1,10 +1,14 @@
-Code Repo for Human Powered Submarine Electronics Subteam 2024-2025 at University of Washington. 
+# UW HPS Electronics 2024-2025
 
-Contacts:
+Code Repo for Human Powered Submarine Electronics Subteam 2024-2025 at University of Washington.
+
+Core Members:
+
 - **Zihui(Andy) Liu**: <liuzihui@uw.edu> (work), <salzhx@gmail.com> (personal, github)
+- **Nate Wagner**: <nww831@uw.edu> (school), <nwwagner831@gmail.com> (professional, GitHub)
+- **Raiyan Hasan**: <raihasan@uw.edu> (work), <raiyan90842@gmail.com> (personal)
+- **Leo Lin**: <leo.lin.2022@gmail.com> (personal)
 
-## Contribution Policy
-**Please work on your own (or your group's) branch** and then merge to **dev** branch. Let's keep main as the working version of the code. 
 
 ## Repository Structure
 
